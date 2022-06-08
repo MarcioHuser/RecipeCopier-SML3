@@ -113,9 +113,6 @@ public:
 		return /*getTimeStamp() + TEXT(" ") +*/ _TAG_NAME;
 	}
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "RecipeCopier")
-	static bool IsLogLevelDisplay();
-
 protected:
 	UPROPERTY(BlueprintReadWrite)
 	class AFGBuildableFactory* targetFactory = nullptr;

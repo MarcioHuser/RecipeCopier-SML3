@@ -91,11 +91,6 @@ FString ARecipeCopierEquipment::GetAuthorityAndPlayer(const AActor* actor)
 		(actor->GetInstigator() ? *actor->GetInstigator()->GetHumanReadableName() : TEXT("None"));
 }
 
-bool ARecipeCopierEquipment::IsLogLevelDisplay()
-{
-	return ARecipeCopierLogic::GetLogLevel() > 4;
-}
-
 void ARecipeCopierEquipment::SetTargets
 (
 	AFGBuildableSplitterSmart* smartSplitter,

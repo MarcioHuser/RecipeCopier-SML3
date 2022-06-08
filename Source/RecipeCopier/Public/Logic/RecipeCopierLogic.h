@@ -16,7 +16,10 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="RecipeCopierLogic")
-	static int GetLogLevel();
+	static int GetLogLevelRC();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "RecipeCopierLogic")
+	static bool IsLogLevelDisplayRC();
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	virtual void Initialize

@@ -79,9 +79,14 @@ void ARecipeCopierLogic::SetConfiguration(const FRecipeCopier_ConfigStruct& in_c
 	RC_LOG_Display(TEXT("==="));
 }
 
-int ARecipeCopierLogic::GetLogLevel()
+int ARecipeCopierLogic::GetLogLevelRC()
 {
 	return configuration.logLevel;
+}
+
+bool ARecipeCopierLogic::IsLogLevelDisplayRC()
+{
+	return GetLogLevelRC() > 4;
 }
 
 void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
