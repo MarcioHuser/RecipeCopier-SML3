@@ -380,6 +380,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
 )
@@ -395,6 +396,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 			glossiness,
 			texts,
 			iconIds,
+			signCopyMode,
 			player,
 			copier
 			);
@@ -413,6 +415,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 				glossiness,
 				texts,
 				iconIds,
+				signCopyMode,
 				player,
 				copier
 				);
@@ -430,6 +433,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
 )
@@ -442,30 +446,43 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	FPrefabSignData signData;
 
 	widgetSign->GetSignPrefabData(signData);
-	
-	signData.ForegroundColor = foregroundColor;
-	signData.BackgroundColor = backgroundColor;
-	signData.AuxiliaryColor = auxiliaryColor;
-	signData.Emissive = emissive;
-	signData.Glossiness = glossiness;
 
-	TArray<FString> OutKeys;
-	signData.TextElementData.GetKeys(OutKeys);
-	for (auto key : OutKeys)
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors))
 	{
-		if(texts.Contains(key))
+		signData.ForegroundColor = foregroundColor;
+		signData.BackgroundColor = backgroundColor;
+		signData.AuxiliaryColor = auxiliaryColor;
+	}
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_EmissiveAndGlossiness))
+	{
+		signData.Emissive = emissive;
+		signData.Glossiness = glossiness;
+	}
+
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts))
+	{
+		for (auto t : texts)
 		{
-			signData.TextElementData[key] = texts[key];
+			if (signData.TextElementData.Contains(t.Key))
+			{
+				signData.TextElementData[t.Key] = t.Value;
+			}
 		}
 	}
-	
-	signData.IconElementData.GetKeys(OutKeys);
-	for (auto key : OutKeys)
+
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Icons))
 	{
-		if(iconIds.Contains(key))
+		for (auto t : iconIds)
 		{
-			signData.IconElementData[key] = iconIds[key];
+			if (signData.IconElementData.Contains(t.Key))
+			{
+				signData.IconElementData[t.Key] = t.Value;
+			}
 		}
+	}
+
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout))
+	{
 	}
 
 	widgetSign->SetPrefabSignData(signData);
@@ -632,7 +649,7 @@ void ARecipeCopierLogic::MoveItems_Server
 	}
 }
 
-void ARecipeCopierLogic::ConcatTexts(const TArray<FString>& strings, FString& result, const FString& connector)
+void ARecipeCopierLogic::ConcatTexts(const TMap<FString, FString>& strings, FString& result, const FString& connector)
 {
 	result = TEXT("");
 
@@ -643,7 +660,7 @@ void ARecipeCopierLogic::ConcatTexts(const TArray<FString>& strings, FString& re
 			result += connector;
 		}
 
-		result += s;
+		result += s.Key + " = " + s.Value;
 	}
 }
 

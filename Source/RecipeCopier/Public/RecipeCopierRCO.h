@@ -65,6 +65,7 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);

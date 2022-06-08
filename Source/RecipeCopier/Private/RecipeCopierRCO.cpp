@@ -145,6 +145,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
 )
@@ -158,6 +159,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 		glossiness,
 		texts,
 		iconIds,
+		signCopyMode,
 		player,
 		copier
 		);
@@ -173,6 +175,7 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
 )

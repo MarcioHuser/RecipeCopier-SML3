@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CommonTypes.h"
+#include "SignCopyModeType.h"
 #include "Components/WidgetComponent.h"
 #include "Equipment/FGEquipment.h"
 
@@ -63,10 +64,11 @@ public:
 		float savedEmissive,
 		float currentGlossiness,
 		float savedGlossiness,
-		const TArray<FString>& currentTexts,
-		const TArray<FString>& savedTexts,
-		const TArray<int32>& currentIconIDs,
-		const TArray<int32>& savedIconIDs
+		const TMap<FString, FString>& currentTexts,
+		const TMap<FString, FString>& savedTexts,
+		const TMap<FString, int32>& currentIconIDs,
+		const TMap<FString, int32>& savedIconIDs,
+		UPARAM(DisplayName = "Sign Copy Mode", meta = (Bitmask, BitmaskEnum = ESignCopyModeType)) int32 in_signCopyMode
 	);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
@@ -75,7 +77,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="RecipeCopier")
 	void PlayObjectScannerCycleRightAnim();
 
-	virtual void CycleCopyMode();
+	virtual void CycleCopyMode(class AFGPlayerController* playerController);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopier")
 	virtual void SetTargets
@@ -126,7 +128,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	float aimedOverclock = 0;
 	UPROPERTY(BlueprintReadWrite)
-	ERecipeCopyMode copyMode = ERecipeCopyMode::RecipeAndOverclock;
+	ERecipeCopyMode recipeCopyMode = ERecipeCopyMode::RecipeAndOverclock;
 
 	UPROPERTY(BlueprintReadWrite)
 	class AFGBuildableSplitterSmart* targetSmartSplitter = nullptr;
@@ -157,7 +159,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> selectedIconIDs;
 	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<class UFGSignPrefabWidget> selectedLayout = nullptr;
+	TSubclassOf<class UFGSignPrefabWidget> selectedPrefabLayout = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	TSubclassOf<class UFGSignTypeDescriptor> selectedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	bool aimedIsDefined = false;
 	UPROPERTY(BlueprintReadWrite)
@@ -175,7 +179,11 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> aimedIconIDs;
 	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<class UFGSignPrefabWidget> aimedLayout = nullptr;
+	TSubclassOf<class UFGSignPrefabWidget> aimedPrefabLayout = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	TSubclassOf<class UFGSignTypeDescriptor> aimedSignTypeDesc = nullptr;
+	UPROPERTY(BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = ESignCopyModeType))
+	int32 signCopyMode = Remove_ESignCopyModeType(TO_ESignCopyModeType(ESignCopyModeType::SCMT_All), ESignCopyModeType::SCMT_Layout); // No layout by default
 
 	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;
@@ -188,6 +196,8 @@ protected:
 	UWidgetComponent* widgetTrainInfo = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	UWidgetComponent* widgetSignInfo = nullptr;
+
+	UWidgetComponent* currentWidgetInfo = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
 	UPointLightComponent* pointLight = nullptr;

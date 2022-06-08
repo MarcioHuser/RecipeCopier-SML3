@@ -80,6 +80,7 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);
@@ -93,6 +94,7 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);
@@ -135,7 +137,7 @@ public:
 	);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
-	static void ConcatTexts(const TArray<FString>& texts, FString& result, const FString& connector = TEXT(", "));
+	static void ConcatTexts(const TMap<FString, FString>& texts, FString& result, const FString& connector = TEXT(", "));
 
 	FCriticalSection eclCritical;
 

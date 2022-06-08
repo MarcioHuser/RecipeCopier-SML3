@@ -26,12 +26,9 @@ bool compareMaps(const TMap<K, V>& a, const TMap<K, V>& b)
 		return false;
 	}
 
-	TArray<K> keys;
-	a.GetKeys(keys);
-
-	for (auto key : keys)
+	for (auto t : a)
 	{
-		if (!b.Contains(key) || a[key] != b[key])
+		if (!b.Contains(t.Key) || t.Value != b[t.Key])
 		{
 			return false;
 		}
@@ -43,14 +40,11 @@ bool compareMaps(const TMap<K, V>& a, const TMap<K, V>& b)
 template <typename K, typename V>
 TArray<V> mapValues(const TMap<K, V>& m)
 {
-	TArray<K> keys;
-	m.GetKeys(keys);
-
 	TArray<V> values;
 
-	for (auto key : keys)
+	for (auto t : m)
 	{
-		values.Add(m[key]);
+		values.Add(t.Value);
 	}
 
 	return values;
@@ -153,7 +147,7 @@ void ARecipeCopierEquipment::HandleAimSmartSplitter(class AFGCharacterPlayer* ch
 
 		SetWidgetSmartSplitterInfo(aimedSplitterRules, selectedSplitterRules);
 
-		SetTextureWidget(widgetSmartSplitterInfo);
+		SetTextureWidget(currentWidgetInfo = widgetSmartSplitterInfo);
 	}
 }
 
@@ -181,8 +175,8 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 
 			// Check noop
 			if (selectedRecipe == nullptr && selectedOverclock <= 0 || // No recipe and no overclocking
-				(copyMode == ERecipeCopyMode::RecipeOnly || !factory->GetCanChangePotential() || aimedOverclock == selectedOverclock) &&
-				(copyMode == ERecipeCopyMode::OverclockOnly || !manufacturer || aimedRecipe == selectedRecipe)
+				(recipeCopyMode == ERecipeCopyMode::RecipeOnly || !factory->GetCanChangePotential() || aimedOverclock == selectedOverclock) &&
+				(recipeCopyMode == ERecipeCopyMode::OverclockOnly || !manufacturer || aimedRecipe == selectedRecipe)
 				// Same overclock (or ignored) and same recipe (or ignored; or not a manufacturer)
 				)
 			{
@@ -192,8 +186,8 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 				}
 			}
 			// Check can define recipe
-			else if (copyMode != ERecipeCopyMode::OverclockOnly && ARecipeCopierLogic::CanProduceRecipe(manufacturer, selectedRecipe) && aimedRecipe != selectedRecipe ||
-				copyMode != ERecipeCopyMode::RecipeOnly && factory->GetMaxPossiblePotential() > 0 && aimedOverclock != selectedOverclock)
+			else if (recipeCopyMode != ERecipeCopyMode::OverclockOnly && ARecipeCopierLogic::CanProduceRecipe(manufacturer, selectedRecipe) && aimedRecipe != selectedRecipe ||
+				recipeCopyMode != ERecipeCopyMode::RecipeOnly && factory->GetMaxPossiblePotential() > 0 && aimedOverclock != selectedOverclock)
 			{
 				if (pointLight)
 				{
@@ -217,7 +211,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 				selectedOverclock
 				);
 
-			SetTextureWidget(widgetFactoryInfo);
+			SetTextureWidget(currentWidgetInfo = widgetFactoryInfo);
 		}
 	}
 	else if (pointLight)
@@ -249,44 +243,49 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 		FPrefabSignData signData;
 
 		widgetSign->GetSignPrefabData(signData);
-		
+
+		aimedPrefabLayout = signData.PrefabLayout;
+		aimedSignTypeDesc = signData.SignTypeDesc;
+
 		aimedForegroundColor = signData.ForegroundColor;
 		aimedBackgroundColor = signData.BackgroundColor;
 		aimedAuxiliaryColor = signData.AuxiliaryColor;
 		aimedEmissive = signData.Emissive;
 		aimedGlossiness = signData.Glossiness;
-		aimedLayout = signData.PrefabLayout;
 
-		// RC_LOG_Display_Condition(TEXT("    Active Prefab Layout: "), *GetNameSafe(signData.mActivePrefabLayout));
+		RC_LOG_Display_Condition(TEXT("    Prefab Layout: "), *GetPathNameSafe(aimedPrefabLayout ));
+		RC_LOG_Display_Condition(TEXT("    Prefab Layout Class: "), *GetPathNameSafe(aimedPrefabLayout ? aimedPrefabLayout->GetClass() : nullptr));
+		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor: "), *GetPathNameSafe(aimedSignTypeDesc));
+		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor Class: "), *GetPathNameSafe(aimedSignTypeDesc ? aimedSignTypeDesc->GetClass() : nullptr));
 
 		aimedTexts = signData.TextElementData;
 		aimedIconIDs = signData.IconElementData;
 
-		TArray<FString> OutKeys;
-		aimedTexts.GetKeys(OutKeys);
-		for (auto i : OutKeys)
-		{
-			RC_LOG_Display_Condition(TEXT("    Text element to data entry: "), *i, TEXT(" = "), *aimedTexts[i]);
-		}
-
-		auto iconLibrary = UFGIconLibrary::Get();
-
-		aimedIconIDs.GetKeys(OutKeys);
-		for (auto i : OutKeys)
-		{
-			RC_LOG_Display_Condition(TEXT("    Icon element to data entry: "), *i, TEXT(" = "), aimedIconIDs[i]);
-
-			FIconData out_iconData;
-			UFGIconLibrary::GetIconDataForIconID(iconLibrary->GetClass(), aimedIconIDs[i], out_iconData);
-
-			RC_LOG_Display_Condition(TEXT("        Icon data: "), *out_iconData.IconName.ToString());
-			RC_LOG_Display_Condition(TEXT("        Icon texture: "), *GetPathNameSafe(out_iconData.Texture.Get()));
-
-			if (out_iconData.Texture)
-			{
-				RC_LOG_Display_Condition(TEXT("        Icon texture class: "), *GetPathNameSafe(out_iconData.Texture.Get()->GetClass()));
-			}
-		}
+		// TArray<FString> OutKeys;
+		// aimedTexts.GetKeys(OutKeys);
+		// for (auto i : OutKeys)
+		// {
+		// 	RC_LOG_Display_Condition(TEXT("    Text element to data entry: "), *i, TEXT(" = "), *aimedTexts[i]);
+		// }
+		//
+		// auto iconLibrary = UFGIconLibrary::Get();
+		//
+		// aimedIconIDs.GetKeys(OutKeys);
+		// for (auto i : OutKeys)
+		// {
+		// 	RC_LOG_Display_Condition(TEXT("    Icon element to data entry: "), *i, TEXT(" = "), aimedIconIDs[i]);
+		//
+		// 	FIconData out_iconData;
+		// 	UFGIconLibrary::GetIconDataForIconID(iconLibrary->GetClass(), aimedIconIDs[i], out_iconData);
+		//
+		// 	RC_LOG_Display_Condition(TEXT("        Icon data: "), *out_iconData.IconName.ToString());
+		// 	RC_LOG_Display_Condition(TEXT("        Icon texture: "), *GetPathNameSafe(out_iconData.Texture.Get()));
+		//
+		// 	if (out_iconData.Texture)
+		// 	{
+		// 		RC_LOG_Display_Condition(TEXT("        Icon texture class: "), *GetPathNameSafe(out_iconData.Texture.Get()->GetClass()));
+		// 	}
+		// }
 
 		// for (auto i : widgetSign->mPrefabTextElementSaveData)
 		// {
@@ -332,18 +331,25 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			selectedEmissive,
 			aimedGlossiness,
 			selectedGlossiness,
-			mapValues(aimedTexts),
-			mapValues(selectedTexts),
-			mapValues(aimedIconIDs),
-			mapValues(selectedIconIDs)
+			aimedTexts,
+			selectedTexts,
+			aimedIconIDs,
+			selectedIconIDs,
+			signCopyMode
 			);
 
-		SetTextureWidget(widgetSignInfo);
+		SetTextureWidget(currentWidgetInfo = widgetSignInfo);
 	}
 }
 
 void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character, class AFGTrain* train)
 {
+	character->GetOutline()->ShowOutline(train, EOutlineColor::OC_USABLE);
+
+	if (train != targetTrain)
+	{
+		SetTextureWidget(currentWidgetInfo = widgetSignInfo);
+	}
 }
 
 void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
@@ -361,7 +367,7 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 
 		if (playerController->WasInputKeyJustPressed(toggleKey))
 		{
-			CycleCopyMode();
+			CycleCopyMode(playerController);
 		}
 
 		if (auto smartSplitter = Cast<AFGBuildableSplitterSmart>(hitActor))
@@ -500,10 +506,11 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 		selectedEmissive,
 		aimedGlossiness,
 		selectedGlossiness,
-		mapValues(aimedTexts),
-		mapValues(selectedTexts),
-		mapValues(aimedIconIDs),
-		mapValues(selectedIconIDs)
+		aimedTexts,
+		selectedTexts,
+		aimedIconIDs,
+		selectedIconIDs,
+		signCopyMode
 		);
 }
 
@@ -545,10 +552,11 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedEmissive,
 		aimedGlossiness = 0,
 		selectedGlossiness,
-		mapValues(aimedTexts = TMap<FString, FString>()),
-		mapValues(selectedTexts),
-		mapValues(aimedIconIDs = TMap<FString, int32>()),
-		mapValues(selectedIconIDs)
+		aimedTexts = TMap<FString, FString>(),
+		selectedTexts,
+		aimedIconIDs = TMap<FString, int32>(),
+		selectedIconIDs,
+		signCopyMode
 		);
 
 	SetWidgetTrainInfo(
@@ -572,7 +580,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 			targetFactory,
 			selectedRecipe,
 			selectedOverclock,
-			copyMode,
+			recipeCopyMode,
 			GetInstigatorCharacter(),
 			this
 			);
@@ -597,6 +605,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 			selectedGlossiness,
 			selectedTexts,
 			selectedIconIDs,
+			signCopyMode,
 			GetInstigatorCharacter(),
 			this
 			);
@@ -611,29 +620,106 @@ void ARecipeCopierEquipment::ApplyTarget()
 	}
 }
 
-void ARecipeCopierEquipment::CycleCopyMode()
+void ARecipeCopierEquipment::CycleCopyMode(AFGPlayerController* playerController)
 {
-	switch (copyMode)
+	auto isLeftControlDown = playerController->IsInputKeyDown(EKeys::LeftControl);
+	auto isLeftShiftDown = playerController->IsInputKeyDown(EKeys::LeftShift);
+	auto isLeftAltDown = playerController->IsInputKeyDown(EKeys::LeftAlt);
+
+	if (currentWidgetInfo == widgetFactoryInfo)
 	{
-	case ERecipeCopyMode::RecipeOnly:
-		copyMode = ERecipeCopyMode::OverclockOnly;
-		break;
-	case ERecipeCopyMode::OverclockOnly:
-		copyMode = ERecipeCopyMode::RecipeAndOverclock;
-		break;
-	case ERecipeCopyMode::RecipeAndOverclock:
-		copyMode = ERecipeCopyMode::RecipeOnly;
-		break;
+		if (isLeftControlDown && isLeftShiftDown && isLeftAltDown)
+		{
+			// Reset to default
+			recipeCopyMode = ERecipeCopyMode::RecipeAndOverclock;
+		}
+		else
+		{
+			switch (recipeCopyMode)
+			{
+			case ERecipeCopyMode::RecipeOnly:
+				recipeCopyMode = ERecipeCopyMode::OverclockOnly;
+				break;
+			case ERecipeCopyMode::OverclockOnly:
+				recipeCopyMode = ERecipeCopyMode::RecipeAndOverclock;
+				break;
+			case ERecipeCopyMode::RecipeAndOverclock:
+				recipeCopyMode = ERecipeCopyMode::RecipeOnly;
+				break;
+			}
+		}
+
+		SetWidgetFactoryInfo(
+			aimedRecipe,
+			selectedRecipe,
+			aimedOverclock,
+			selectedOverclock
+			);
+
+		PlayObjectScannerCycleRightAnim();
 	}
+	else if (currentWidgetInfo == widgetSignInfo)
+	{
+		auto signCopyModeBackup = signCopyMode;
 
-	SetWidgetFactoryInfo(
-		aimedRecipe,
-		selectedRecipe,
-		aimedOverclock,
-		selectedOverclock
-		);
+		if (isLeftControlDown && isLeftShiftDown && isLeftAltDown)
+		{
+			// Reset to default
+			signCopyMode = Remove_ESignCopyModeType(TO_ESignCopyModeType(ESignCopyModeType::SCMT_All), ESignCopyModeType::SCMT_Layout);
+		}
+		else if (isLeftControlDown && !isLeftShiftDown && !isLeftAltDown)
+		{
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors);
+		}
+		else if (!isLeftControlDown && !isLeftShiftDown && isLeftAltDown)
+		{
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Icons);
+		}
+		else if (isLeftControlDown && isLeftShiftDown && !isLeftAltDown)
+		{
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_EmissiveAndGlossiness);
+		}
+		else if (!isLeftControlDown && isLeftShiftDown && !isLeftAltDown)
+		{
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts);
+		}
+		else
+		{
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors);
+			//signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout);
+		}
 
-	PlayObjectScannerCycleRightAnim();
+		if (!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors) &&
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Icons) &&
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_EmissiveAndGlossiness) &&
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts) /*&&
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout)*/)
+		{
+			signCopyMode = signCopyModeBackup;
+		}
+
+		SetWidgetSignInfo(
+			aimedIsDefined,
+			selectedIsDefined,
+			aimedForegroundColor,
+			selectedForegroundColor,
+			aimedBackgroundColor,
+			selectedBackgroundColor,
+			aimedAuxiliaryColor,
+			selectedAuxiliaryColor,
+			aimedEmissive,
+			selectedEmissive,
+			aimedGlossiness,
+			selectedGlossiness,
+			aimedTexts,
+			selectedTexts,
+			aimedIconIDs,
+			selectedIconIDs,
+			signCopyMode
+			);
+
+		PlayObjectScannerCycleRightAnim();
+	}
 }
 
 bool ARecipeCopierEquipment::CompareSplitterRules(class AFGBuildableSplitterSmart* smartSplitter)
