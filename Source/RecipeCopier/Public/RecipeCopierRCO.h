@@ -3,6 +3,7 @@
 #include "FGRecipe.h"
 #include "FGRemoteCallObject.h"
 #include "CommonTypes.h"
+#include "FGRailroadTimeTable.h"
 #include "Buildables/FGBuildableSplitterSmart.h"
 #include "Resources/FGEquipmentDescriptor.h"
 #include "RecipeCopierRCO.generated.h"
@@ -65,13 +66,21 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);
 
 	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable, Category="RecipeCopierRCO")
-	void ApplyTrainInfo(class AFGTrain* train, AFGCharacterPlayer* player, ARecipeCopierEquipment* copier);
+	void ApplyTrainInfo
+	(
+		class AFGTrain* train,
+		const TArray<FTimeTableStop>& trainStops,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
 
 	UPROPERTY(Replicated)
 	bool dummy = true;

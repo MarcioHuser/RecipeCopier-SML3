@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CommonTypes.h"
+#include "FGRailroadTimeTable.h"
 #include "SignCopyModeType.h"
 #include "Components/WidgetComponent.h"
 #include "Equipment/FGEquipment.h"
@@ -68,11 +69,17 @@ public:
 		const TMap<FString, FString>& savedTexts,
 		const TMap<FString, int32>& currentIconIDs,
 		const TMap<FString, int32>& savedIconIDs,
+		const FText& currentPrefabLayoutDescription,
+		const FText& savedPrefabLayoutDescription,
 		UPARAM(DisplayName = "Sign Copy Mode", meta = (Bitmask, BitmaskEnum = ESignCopyModeType)) int32 in_signCopyMode
 	);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
-	void SetWidgetTrainInfo();
+	void SetWidgetTrainInfo
+	(
+		const TArray<FTimeTableStop>& currentTrainStops,
+		const TArray<FTimeTableStop>& savedTrainStops
+	);
 
 	UFUNCTION(BlueprintImplementableEvent, Category="RecipeCopier")
 	void PlayObjectScannerCycleRightAnim();
@@ -136,6 +143,10 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	class AFGTrain* targetTrain = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FTimeTableStop> aimedTrainStops;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FTimeTableStop> selectedTrainStops;
 
 	UPROPERTY(BlueprintReadWrite)
 	class AFGBuildableWidgetSign* targetWidgetSign = nullptr;
@@ -180,7 +191,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<class UFGSignTypeDescriptor> aimedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = ESignCopyModeType))
-	int32 signCopyMode = Remove_ESignCopyModeType(TO_ESignCopyModeType(ESignCopyModeType::SCMT_All), ESignCopyModeType::SCMT_Layout); // No layout by default
+	int32 signCopyMode = TO_ESignCopyModeType(ESignCopyModeType::SCMT_All); // No layout by default
 
 	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;

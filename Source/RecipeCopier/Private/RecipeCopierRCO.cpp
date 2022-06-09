@@ -121,16 +121,29 @@ bool URecipeCopierRCO::ApplySmartSplitterInfo_Validate
 	return true;
 }
 
-void URecipeCopierRCO::ApplyTrainInfo_Implementation(AFGTrain* train, AFGCharacterPlayer* player, ARecipeCopierEquipment* copier)
+void URecipeCopierRCO::ApplyTrainInfo_Implementation
+(
+	AFGTrain* train,
+	const TArray<FTimeTableStop>& trainStops,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
 {
 	ARecipeCopierLogic::ApplyTrainInfo(
 		train,
+		trainStops,
 		player,
 		copier
 		);
 }
 
-bool URecipeCopierRCO::ApplyTrainInfo_Validate(AFGTrain* train, AFGCharacterPlayer* player, ARecipeCopierEquipment* copier)
+bool URecipeCopierRCO::ApplyTrainInfo_Validate
+(
+	AFGTrain* train,
+	const TArray<FTimeTableStop>& trainStops,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
 {
 	return true;
 }
@@ -145,6 +158,8 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
@@ -159,6 +174,8 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 		glossiness,
 		texts,
 		iconIds,
+		prefabLayout,
+		signTypeDesc,
 		signCopyMode,
 		player,
 		copier
@@ -175,6 +192,8 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier

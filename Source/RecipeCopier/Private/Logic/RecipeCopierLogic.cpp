@@ -7,6 +7,7 @@
 #include "FGCharacterPlayer.h"
 #include "FGItemPickup_Spawnable.h"
 #include "FGTrain.h"
+#include "FGTrainStationIdentifier.h"
 #include "RecipeCopierEquipment.h"
 #include "RecipeCopierRCO.h"
 #include "Buildables/FGBuildableManufacturer.h"
@@ -385,6 +386,8 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
@@ -401,6 +404,8 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 			glossiness,
 			texts,
 			iconIds,
+			prefabLayout,
+			signTypeDesc,
 			signCopyMode,
 			player,
 			copier
@@ -420,6 +425,8 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 				glossiness,
 				texts,
 				iconIds,
+				prefabLayout,
+				signTypeDesc,
 				signCopyMode,
 				player,
 				copier
@@ -438,6 +445,8 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
@@ -486,8 +495,10 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 		}
 	}
 
-	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout))
+	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout) &&
+		signData.SignTypeDesc == signTypeDesc)
 	{
+		signData.PrefabLayout = prefabLayout;
 	}
 
 	widgetSign->SetPrefabSignData(signData);
@@ -495,12 +506,19 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	copier->ClearTargets();
 }
 
-void ARecipeCopierLogic::ApplyTrainInfo(AFGTrain* train, AFGCharacterPlayer* player, ARecipeCopierEquipment* copier)
+void ARecipeCopierLogic::ApplyTrainInfo
+(
+	AFGTrain* train,
+	const TArray<FTimeTableStop>& trainStops,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
 {
 	if (train->HasAuthority())
 	{
 		ApplyTrainInfo_Server(
 			train,
+			trainStops,
 			player,
 			copier
 			);
@@ -512,6 +530,7 @@ void ARecipeCopierLogic::ApplyTrainInfo(AFGTrain* train, AFGCharacterPlayer* pla
 		{
 			rco->ApplyTrainInfo(
 				train,
+				trainStops,
 				player,
 				copier
 				);
@@ -519,12 +538,27 @@ void ARecipeCopierLogic::ApplyTrainInfo(AFGTrain* train, AFGCharacterPlayer* pla
 	}
 }
 
-void ARecipeCopierLogic::ApplyTrainInfo_Server(AFGTrain* train, AFGCharacterPlayer* player, ARecipeCopierEquipment* copier)
+void ARecipeCopierLogic::ApplyTrainInfo_Server
+(
+	AFGTrain* train,
+	const TArray<FTimeTableStop>& trainStops,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
 {
 	if (!train || !train->HasAuthority())
 	{
 		return;
 	}
+
+	auto timetable = train->GetTimeTable();
+	if (!timetable)
+	{
+		timetable = train->NewTimeTable();
+	}
+
+	timetable->SetStops(trainStops);
+	timetable->PurgeInvalidStops();
 
 	copier->ClearTargets();
 }
@@ -666,6 +700,93 @@ void ARecipeCopierLogic::ConcatTexts(const TMap<FString, FString>& strings, FStr
 		}
 
 		result += s.Key + " = " + s.Value;
+	}
+}
+
+template <typename C, typename V>
+void executeIfBound(C callback, UPanelWidget* container, const V& value)
+{
+	if (callback.IsBound())
+	{
+		callback.Execute(container, value);
+	}
+}
+
+void ARecipeCopierLogic::SetTimetable
+(
+	UPanelWidget* containerWidget,
+	FAppendLabel appendLabelCallback,
+	FAppendItemIcon appendItemIconCallback,
+	const TArray<FTimeTableStop>& trainStops
+)
+{
+	containerWidget->ClearChildren();
+
+	auto firstStop = true;
+	for (auto trainStop : trainStops)
+	{
+		if (!trainStop.Station)
+		{
+			continue;
+		}
+
+		if (!firstStop)
+		{
+			executeIfBound(appendLabelCallback, containerWidget,TEXT(" » "));
+		}
+		else
+		{
+			firstStop = false;
+		}
+
+		FString leftStationName;
+		FString rightStationName;
+		auto stationName = trainStop.Station->GetStationName().ToString();
+		while (stationName.Split(TEXT(" "), &leftStationName, &rightStationName))
+		{
+			executeIfBound(appendLabelCallback, containerWidget, leftStationName + TEXT(" "));
+
+			stationName = rightStationName;
+		}
+		executeIfBound(appendLabelCallback, containerWidget, stationName + TEXT("; "));
+
+		// executeIfBound(appendLabelCallback, containerWidget, trainStop.Station->GetStationName().ToString() + TEXT("; "));
+		executeIfBound(appendLabelCallback, containerWidget, TEXT("Wait: "));
+		executeIfBound(appendLabelCallback, containerWidget, FString::SanitizeFloat(trainStop.DockingRuleSet.DockForDuration, 0));
+		executeIfBound(appendLabelCallback, containerWidget,TEXT(" "));
+		executeIfBound(
+			appendLabelCallback,
+			containerWidget,
+			trainStop.DockingRuleSet.DockingDefinition == ETrainDockingDefinition::TDD_FullyLoadUnload
+				? TEXT("Full; ")
+				: TEXT("Once; ")
+			);
+
+		if (trainStop.DockingRuleSet.LoadFilterDescriptors.Num())
+		{
+			executeIfBound(appendLabelCallback, containerWidget,TEXT("Load: "));
+
+			auto firstFilter = true;
+			for (auto filter : trainStop.DockingRuleSet.LoadFilterDescriptors)
+			{
+				executeIfBound(appendItemIconCallback, containerWidget, filter);
+			}
+
+			executeIfBound(appendLabelCallback, containerWidget,TEXT("; "));
+		}
+
+		if (trainStop.DockingRuleSet.LoadFilterDescriptors.Num())
+		{
+			executeIfBound(appendLabelCallback, containerWidget,TEXT("Unload: "));
+
+			auto firstFilter = true;
+			for (auto filter : trainStop.DockingRuleSet.UnloadFilterDescriptors)
+			{
+				executeIfBound(appendItemIconCallback, containerWidget, filter);
+			}
+
+			executeIfBound(appendLabelCallback, containerWidget,TEXT("; "));
+		}
 	}
 }
 

@@ -8,7 +8,9 @@
 #include <map>
 
 #include "FGIconLibrary.h"
+#include "FGLocomotive.h"
 #include "FGPlayerController.h"
+#include "FGRailroadTimeTable.h"
 #include "FGTrain.h"
 #include "Buildables/FGBuildableManufacturer.h"
 #include "Buildables/FGBuildableWidgetSign.h"
@@ -50,8 +52,8 @@ TArray<V> mapValues(const TMap<K, V>& m)
 	return values;
 }
 
-/*template<>
-bool compareArrays<FString>(const TArray<FString>& a, const TArray<FString>& b)
+template <typename T>
+bool compareArrays(const TArray<T>& a, const TArray<T>& b)
 {
 	if (a.Num() != b.Num())
 	{
@@ -67,7 +69,51 @@ bool compareArrays<FString>(const TArray<FString>& a, const TArray<FString>& b)
 	}
 
 	return true;
-}*/
+}
+
+template <>
+bool compareArrays<FTimeTableStop>(const TArray<FTimeTableStop>& a, const TArray<FTimeTableStop>& b)
+{
+	if (a.Num() != b.Num())
+	{
+		return false;
+	}
+
+	for (auto x = 0; x < a.Num(); x++)
+	{
+		if (a[x].Station != b[x].Station)
+		{
+			return false;
+		}
+
+		if (a[x].DockingRuleSet.DockingDefinition != b[x].DockingRuleSet.DockingDefinition)
+		{
+			return false;
+		}
+
+		if (a[x].DockingRuleSet.IsDurationAndRule != b[x].DockingRuleSet.IsDurationAndRule)
+		{
+			return false;
+		}
+
+		if (a[x].DockingRuleSet.DockForDuration != b[x].DockingRuleSet.DockForDuration)
+		{
+			return false;
+		}
+
+		if (!compareArrays(a[x].DockingRuleSet.LoadFilterDescriptors, b[x].DockingRuleSet.LoadFilterDescriptors))
+		{
+			return false;
+		}
+
+		if (!compareArrays(a[x].DockingRuleSet.UnloadFilterDescriptors, b[x].DockingRuleSet.UnloadFilterDescriptors))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
 
 ARecipeCopierEquipment::ARecipeCopierEquipment()
 {
@@ -248,10 +294,10 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 		aimedEmissive = signData.Emissive;
 		aimedGlossiness = signData.Glossiness;
 
-		RC_LOG_Display_Condition(TEXT("    Prefab Layout: "), *GetPathNameSafe(aimedPrefabLayout ));
-		RC_LOG_Display_Condition(TEXT("    Prefab Layout Class: "), *GetPathNameSafe(aimedPrefabLayout ? aimedPrefabLayout->GetClass() : nullptr));
-		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor: "), *GetPathNameSafe(aimedSignTypeDesc));
-		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor Class: "), *GetPathNameSafe(aimedSignTypeDesc ? aimedSignTypeDesc->GetClass() : nullptr));
+		// RC_LOG_Display_Condition(TEXT("    Prefab Layout: "), *GetPathNameSafe(aimedPrefabLayout ));
+		// RC_LOG_Display_Condition(TEXT("    Prefab Layout Class: "), *GetPathNameSafe(aimedPrefabLayout ? aimedPrefabLayout->GetClass() : nullptr));
+		// RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor: "), *GetPathNameSafe(aimedSignTypeDesc));
+		// RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor Class: "), *GetPathNameSafe(aimedSignTypeDesc ? aimedSignTypeDesc->GetClass() : nullptr));
 
 		aimedTexts = signData.TextElementData;
 		aimedIconIDs = signData.IconElementData;
@@ -330,6 +376,8 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
+			FText::FromString(GetNameSafe(aimedPrefabLayout)),
+			FText::FromString(GetNameSafe(selectedPrefabLayout)),
 			signCopyMode
 			);
 
@@ -339,11 +387,55 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 
 void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character, class AFGTrain* train)
 {
-	character->GetOutline()->ShowOutline(train, EOutlineColor::OC_USABLE);
+	character->GetOutline()->ShowOutline(train->GetMultipleUnitMaster(), EOutlineColor::OC_USABLE);
 
 	if (train != targetTrain)
 	{
-		SetTextureWidget(currentWidgetInfo = widgetSignInfo);
+		RC_LOG_Display_Condition(*GetPathNameSafe(train), TEXT(": RecipeCopier: Set new target train"));
+
+		SetTargets(
+			nullptr,
+			train,
+			nullptr,
+			nullptr
+			);
+
+		aimedTrainStops.Empty();
+
+		if (train->HasTimeTable())
+		{
+			train->GetTimeTable()->GetStops(aimedTrainStops);
+
+			if (!compareArrays(aimedTrainStops, selectedTrainStops))
+			{
+				if (pointLight)
+				{
+					pointLight->SetIntensity(50);
+					pointLight->SetLightColor(FColor(0x0, 0xff, 0x0, 0xff));
+				}
+			}
+			else
+			{
+				if (pointLight)
+				{
+					pointLight->SetIntensity(0);
+				}
+			}
+		}
+		else
+		{
+			if (pointLight)
+			{
+				pointLight->SetIntensity(0);
+			}
+		}
+
+		SetWidgetTrainInfo(
+			aimedTrainStops,
+			selectedTrainStops
+			);
+
+		SetTextureWidget(currentWidgetInfo = widgetTrainInfo);
 	}
 }
 
@@ -369,9 +461,9 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 		{
 			HandleAimSmartSplitter(character, smartSplitter);
 		}
-		else if (auto train = Cast<AFGTrain>(hitActor))
+		else if (auto locomotive = Cast<AFGLocomotive>(hitActor))
 		{
-			character->GetOutline()->ShowOutline(train, EOutlineColor::OC_USABLE);
+			HandleAimTrain(character, locomotive->GetTrain());
 		}
 		else if (auto widgetSign = Cast<AFGBuildableWidgetSign>(hitActor))
 		{
@@ -487,6 +579,8 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 	selectedGlossiness = aimedGlossiness;
 	selectedTexts = aimedTexts;
 	selectedIconIDs = aimedIconIDs;
+	selectedPrefabLayout = aimedPrefabLayout;
+	selectedSignTypeDesc = aimedSignTypeDesc;
 
 	SetWidgetSignInfo(
 		aimedIsDefined,
@@ -505,12 +599,22 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 		selectedTexts,
 		aimedIconIDs,
 		selectedIconIDs,
+		FText::FromString(GetNameSafe(aimedPrefabLayout)),
+		FText::FromString(GetNameSafe(selectedPrefabLayout)),
 		signCopyMode
 		);
 }
 
 void ARecipeCopierEquipment::CopyTrain()
 {
+	RC_LOG_Display_Condition(*GetPathNameSafe(targetSmartSplitter), TEXT(": RecipeCopier: Set new target train"));
+
+	selectedTrainStops = aimedTrainStops;
+
+	SetWidgetTrainInfo(
+		aimedTrainStops,
+		selectedTrainStops
+		);
 }
 
 void ARecipeCopierEquipment::ClearTargets_Implementation()
@@ -551,10 +655,16 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedTexts,
 		aimedIconIDs = TMap<FString, int32>(),
 		selectedIconIDs,
+		FText::FromString(GetNameSafe(aimedPrefabLayout = nullptr)),
+		FText::FromString(GetNameSafe(selectedPrefabLayout)),
 		signCopyMode
 		);
 
+	aimedSignTypeDesc = nullptr;
+
 	SetWidgetTrainInfo(
+		aimedTrainStops = TArray<FTimeTableStop>(),
+		selectedTrainStops
 		);
 }
 
@@ -600,6 +710,8 @@ void ARecipeCopierEquipment::ApplyTarget()
 			selectedGlossiness,
 			selectedTexts,
 			selectedIconIDs,
+			selectedPrefabLayout,
+			selectedSignTypeDesc,
 			signCopyMode,
 			GetInstigatorCharacter(),
 			this
@@ -609,6 +721,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 	{
 		ARecipeCopierLogic::ApplyTrainInfo(
 			targetTrain,
+			selectedTrainStops,
 			GetInstigatorCharacter(),
 			this
 			);
@@ -660,7 +773,7 @@ void ARecipeCopierEquipment::CycleCopyMode(AFGPlayerController* playerController
 		if (isLeftControlDown && isLeftShiftDown && isLeftAltDown)
 		{
 			// Reset to default
-			signCopyMode = Remove_ESignCopyModeType(TO_ESignCopyModeType(ESignCopyModeType::SCMT_All), ESignCopyModeType::SCMT_Layout);
+			signCopyMode = TO_ESignCopyModeType(ESignCopyModeType::SCMT_All);
 		}
 		else if (isLeftControlDown && !isLeftShiftDown && !isLeftAltDown)
 		{
@@ -678,17 +791,16 @@ void ARecipeCopierEquipment::CycleCopyMode(AFGPlayerController* playerController
 		{
 			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts);
 		}
-		else
+		else if (!isLeftControlDown && !isLeftShiftDown && !isLeftAltDown)
 		{
-			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors);
-			//signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout);
+			signCopyMode = Toggle_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout);
 		}
 
 		if (!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Colors) &&
 			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Icons) &&
 			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_EmissiveAndGlossiness) &&
-			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts) /*&&
-			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout)*/)
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Texts) &&
+			!Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout))
 		{
 			signCopyMode = signCopyModeBackup;
 		}
@@ -710,6 +822,8 @@ void ARecipeCopierEquipment::CycleCopyMode(AFGPlayerController* playerController
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
+			FText::FromString(GetNameSafe(aimedPrefabLayout)),
+			FText::FromString(GetNameSafe(selectedPrefabLayout)),
 			signCopyMode
 			);
 

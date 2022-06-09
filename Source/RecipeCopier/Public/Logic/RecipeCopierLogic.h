@@ -1,11 +1,16 @@
 ﻿#pragma once
 
 #include "CommonTypes.h"
+#include "FGRailroadTimeTable.h"
 #include "FGRecipe.h"
 #include "RecipeCopier_ConfigStruct.h"
 #include "Buildables/FGBuildableSplitterSmart.h"
 
 #include "RecipeCopierLogic.generated.h"
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FAppendLabel, class UPanelWidget*, container, const FString&, value);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FAppendItemIcon, class UPanelWidget*, container, TSubclassOf<UFGItemDescriptor>, itemDesc);
 
 UCLASS()
 class RECIPECOPIER_API ARecipeCopierLogic : public AActor
@@ -83,6 +88,8 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
@@ -97,6 +104,8 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
+		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
@@ -106,12 +115,14 @@ public:
 	static void ApplyTrainInfo
 	(
 		class AFGTrain* train,
+		const TArray<FTimeTableStop>& trainStops,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);
 	static void ApplyTrainInfo_Server
 	(
 		class AFGTrain* train,
+		const TArray<FTimeTableStop>& trainStops,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
 	);
@@ -141,6 +152,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	static void ConcatTexts(const TMap<FString, FString>& texts, FString& result, const FString& connector = TEXT(", "));
+
+	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
+	static void SetTimetable
+	(
+		UPanelWidget* containerWidget,
+		FAppendLabel appendLabelCallback,
+		FAppendItemIcon appendItemIconCallback,
+		const TArray<FTimeTableStop>& trainStops
+	);
 
 	FCriticalSection eclCritical;
 
