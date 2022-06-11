@@ -1,12 +1,12 @@
-<h2>Copy your recipes by pointing and clicking!</h2>
+<h2>Copy various settings from a building into another by pointing and clicking!</h2>
 
 <hr/>
 
 <br/>
 <br/>
 
-With this mod you can select a recipe from a machine and replicate it along multiple machines. You can also aim to a manufacturer and
-check wich recipe it currently has defined.
+With this mod you can select settings from a machine and replicate it along multiple machines of the same kind.
+You can also aim to a building to just check how it is currently configured
 
 <br/>
 <br/>
@@ -21,15 +21,75 @@ Find me at <a href="https://discord.gg/A9bFvkbav4">Satisfactory Modding</a> Disc
 <br/>
 <br/>
 
+<h3>Supported building types:</h3>
+<ul>
+	<li>
+		<h3>Extractors</h3>
+		<ul>
+			<li>Miners (Overclock)</li>
+			<li>Water Extractors (Overclock)</li>
+			<li>Oil Extractors (Overclock)</li>
+			<li>Resource Well Pressurizer (Overclock)</li>
+		</ul>
+	</li>
+	<li>
+		<h3>Generators</h3>
+		<ul>
+			<li>Biomass Burner (Overclock)</li>
+			<li>Coal Generators (Overclock)</li>
+			<li>Fuel Generators (Overclock)</li>
+			<li>Nuclear Power Plant (Overclock)</li>
+		</ul>
+	</li>
+	<li>
+		<h3>Production</h3>
+		<ul>
+			<li>Smelters (Overclock and Recipe)</li>
+			<li>Foundries (Overclock and Recipe)</li>
+			<li>Constructors (Overclock and Recipe)</li>
+			<li>Assemblers (Overclock and Recipe)</li>
+			<li>Manufactorers (Overclock and Recipe)</li>
+			<li>Refineries (Overclock and Recipe)</li>
+			<li>Packagers (Overclock and Recipe)</li>
+			<li>Blenders (Overclock and Recipe)</li>
+			<li>Any MOD machine that accepts overclock and/or use recipes</li>
+		</ul>
+	</li>
+	<li>
+		<h3>Signs</h3>
+		<ul>
+			<li>Colors</li>
+			<li>Icons</li>
+			<li> Texts
+			</li>
+			<li>Emissive</li>
+			<li>Glossiness</li>
+			<li>Layout - restricted for signs that share the same subset of layouts</li>
+		</ul>
+	</li>
+	<li>
+		<h3>Trains</h3>
+		<ul>
+			<li>Timetables</li>
+			<li>load/unload filters</li>
+			<li>stop type</li>
+			<li>minimum wait time</li>
+		</ul>
+	</li>
+</ul>
+
 <h3>How to use it:</h3>
-Unlock by purchsing the Milestone at Tier 1, build the tool at the Equipment Workshop and with that you can:
+Unlock it by purchsing the Milestone at Tier 1. The tool can be built at the Equipment Workshop and with that you can:
 <ul>
 	<li>See the information from the building you are aiming;</li>
 	<li>Select the information from the building by clicking on it while holding Left Ctrl;</li>
 	<li>Define the selected information into new compatible buildings by clicking while aiming on it.
-        The tool will glow green if the information can be defined on the building; red if not. It will be off if
-        the building does does not accept the information or already has the same information defined;</li>
-	<li>For recipe and overclock copying you can cycle modes (Recipe & Overclock -> Recipe Only -> Overclock Only) by Rick Clicking the mouse</li>
+		The tool will glow green if the information can be defined on the building; red if not. It will be off if
+		the building does does not accept the information or already has the same information defined;
+	</li>
+	<li>For recipe and overclock copying you can cycle modes (Recipe & Overclock -> Recipe Only -> Overclock Only) by
+		Rick Clicking the mouse
+	</li>
 	<li>For signs copying you can enable/disable the various settings by doing one of the following:
 		<ul>
 			<li>Right Click: enable/disable colors copying</li>
@@ -46,6 +106,10 @@ Unlock by purchsing the Milestone at Tier 1, build the tool at the Equipment Wor
 <br/>
 
 TODO:
+<ul>
+	<li>Add support to Light Control Panels</li>
+	<li>Add support to Valves</li>
+</ul>
 
 <br/>
 <br/>
@@ -53,11 +117,11 @@ TODO:
 ### Changelog
 - Version 2.3.0
 	- Added support for new building types:
-		- Signs: colors, icons, emissive, glossines, texts and layout. Copying from a signs of different type/size is possible, but some text and/or icon may not copy over
-		- Trains: timetables (inclusing items filtering)
+		- Signs: colors, icons, emissive, glossines, texts and layout. Copying from signs of different type/size is possible, but some text and/or icon may not copy over
+		- Trains: timetables (inclusing load/unload filtering)
 
 - Version 2.2.1
-	- Fixed categorization of the Hand Tool to be at the "Hands" category, at the Equipment Workshop  
+	- Fixed categorization of the Hand Tool to be at the "Hands" category, at the Equipment Workshop
 
 - Version 2.2.0
 	- Update 5
@@ -109,9 +173,9 @@ TODO:
 		- Fixed the ingredients and products being left behind on the device screen when no recipe is selected
 	- Features
 		- Copy mode is now togglable by clicking the right mouse button. There will be three modes:
-			- Recipe and overclock: will copy both settings if any are different than the selected values. This is the initial mode;
-			- Recipe only: will copy the recipe, but keep the overclock setting, wichever it is;
-			- Overclock only: will copy only the overclock setting, keeping the current recipe
+		- Recipe and overclock: will copy both settings if any are different than the selected values. This is the initial mode;
+		- Recipe only: will copy the recipe, but keep the overclock setting, wichever it is;
+		- Overclock only: will copy only the overclock setting, keeping the current recipe
 
 - Version 0.0.4
 	- Features
@@ -134,5 +198,7 @@ TODO:
 <br/>
 
 <h3>Credits:</h3>
-<div>Multiplayer banner and Mod icon designed by Deantendo#4265 (find him at <a href="https://discord.gg/Q8nM4G">Satisfactory Modding</a> Discord server)</div>
+<div>Multiplayer banner and Mod icon designed by Deantendo#4265 (find him at <a href="https://discord.gg/Q8nM4G">Satisfactory
+	Modding</a> Discord server)
+</div>
 <div>Icons by <a href="icons8.com">icons8.com</a></div>

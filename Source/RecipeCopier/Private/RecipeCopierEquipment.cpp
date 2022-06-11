@@ -12,6 +12,7 @@
 #include "FGPlayerController.h"
 #include "FGRailroadTimeTable.h"
 #include "FGTrain.h"
+#include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableManufacturer.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Components/WidgetComponent.h"
@@ -439,6 +440,11 @@ void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character,
 	}
 }
 
+void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel)
+{
+	character->GetOutline()->ShowOutline(lightsControlPanel, EOutlineColor::OC_USABLE);
+}
+
 void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 {
 	if (auto playerController = Cast<AFGPlayerController>(GetInstigatorController()))
@@ -469,6 +475,10 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 		{
 			HandleAimSign(character, widgetSign);
 		}
+		// else if (auto lightsControlPanel = Cast<AFGBuildableLightsControlPanel>(hitActor))
+		// {
+		// 	HandleAimLightsControlPanel(character, lightsControlPanel);
+		// }
 		else if (auto factory = Cast<AFGBuildableFactory>(hitActor))
 		{
 			HandleAimFactory(playerController, character, factory);

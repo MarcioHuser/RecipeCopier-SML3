@@ -3,6 +3,7 @@
 #include "CommonTypes.h"
 #include "FGRailroadTimeTable.h"
 #include "SignCopyModeType.h"
+#include "Buildables/FGBuildableLightSource.h"
 #include "Components/WidgetComponent.h"
 #include "Equipment/FGEquipment.h"
 
@@ -101,6 +102,7 @@ public:
 	virtual void HandleAimFactory(class AFGPlayerController* playerController, class AFGCharacterPlayer* character, class AFGBuildableFactory* factory);
 	virtual void HandleAimSign(class AFGCharacterPlayer* character, class AFGBuildableWidgetSign* widgetSign);
 	virtual void HandleAimTrain(class AFGCharacterPlayer* character, class AFGTrain* train);
+	virtual void HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel);
 
 	static FString GetAuthorityAndPlayer(const AActor* actor);
 
@@ -192,6 +194,17 @@ protected:
 	TSubclassOf<class UFGSignTypeDescriptor> aimedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = ESignCopyModeType))
 	int32 signCopyMode = TO_ESignCopyModeType(ESignCopyModeType::SCMT_All); // No layout by default
+
+	UPROPERTY(BlueprintReadWrite)
+	class AFGBuildableLightsControlPanel* targetLightsControlPanel = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	FLightSourceControlData aimedLightSourceControlData;
+	UPROPERTY(BlueprintReadWrite)
+	FLightSourceControlData aimedIsEnabled;
+	UPROPERTY(BlueprintReadWrite)
+	FLightSourceControlData selectedLightSourceControlData;
+	UPROPERTY(BlueprintReadWrite)
+	FLightSourceControlData selectedIsEnabled;
 
 	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;
