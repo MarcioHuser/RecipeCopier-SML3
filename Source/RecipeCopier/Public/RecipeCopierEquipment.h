@@ -35,6 +35,8 @@ public:
 	virtual void CopyWidgetSign();
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
 	virtual void CopyTrain();
+	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
+	virtual void CopyLightsControlPanel();
 
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier", NetMulticast, Reliable)
 	virtual void ClearTargets();
@@ -82,6 +84,15 @@ public:
 		const TArray<FTimeTableStop>& savedTrainStops
 	);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
+	void SetWidgetLightsControlPanelInfo
+	(
+		const FLightSourceControlData& currentLightSourceControlData,
+		const FLightSourceControlData& savedLightSourceControlData,
+		bool currentIsLightEnabled,
+		bool savedIsLightEnabled
+	);
+
 	UFUNCTION(BlueprintImplementableEvent, Category="RecipeCopier")
 	void PlayObjectScannerCycleRightAnim();
 
@@ -93,6 +104,7 @@ public:
 		class AFGBuildableSplitterSmart* smartSplitter,
 		class AFGTrain* train,
 		class AFGBuildableWidgetSign* widgetSign,
+		class AFGBuildableLightsControlPanel* lightsControlPanel,
 		class AFGBuildableFactory* factory
 	);
 
@@ -200,11 +212,11 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FLightSourceControlData aimedLightSourceControlData;
 	UPROPERTY(BlueprintReadWrite)
-	FLightSourceControlData aimedIsEnabled;
+	bool aimedIsLightEnabled = false;
 	UPROPERTY(BlueprintReadWrite)
 	FLightSourceControlData selectedLightSourceControlData;
 	UPROPERTY(BlueprintReadWrite)
-	FLightSourceControlData selectedIsEnabled;
+	bool selectedIsLightEnabled = false;
 
 	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;
@@ -217,6 +229,8 @@ protected:
 	UWidgetComponent* widgetTrainInfo = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	UWidgetComponent* widgetSignInfo = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	UWidgetComponent* widgetLightsControlPanel = nullptr;
 
 	UWidgetComponent* currentWidgetInfo = nullptr;
 

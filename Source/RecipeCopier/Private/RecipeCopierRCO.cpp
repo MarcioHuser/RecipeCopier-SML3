@@ -102,7 +102,7 @@ void URecipeCopierRCO::ApplySmartSplitterInfo_Implementation
 	class ARecipeCopierEquipment* copier
 )
 {
-	ARecipeCopierLogic::ApplySmartSplitterInfo(
+	ARecipeCopierLogic::ApplySmartSplitterInfo_Server(
 		smartSplitter,
 		splitterRules,
 		player,
@@ -129,7 +129,7 @@ void URecipeCopierRCO::ApplyTrainInfo_Implementation
 	ARecipeCopierEquipment* copier
 )
 {
-	ARecipeCopierLogic::ApplyTrainInfo(
+	ARecipeCopierLogic::ApplyTrainInfo_Server(
 		train,
 		trainStops,
 		player,
@@ -165,7 +165,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	ARecipeCopierEquipment* copier
 )
 {
-	ARecipeCopierLogic::ApplyWidgetSignInfo(
+	ARecipeCopierLogic::ApplyWidgetSignInfo_Server(
 		widgetSign,
 		foregroundColor,
 		backgroundColor,
@@ -195,6 +195,36 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	return true;
+}
+
+void URecipeCopierRCO::ApplyLightsControlPanel_Implementation
+(
+	AFGBuildableLightsControlPanel* lightsControlPanel,
+	const FLightSourceControlData& lightSourceControlData,
+	bool isLightEnabled,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	ARecipeCopierLogic::ApplyLightsControlPanel_Server(
+		lightsControlPanel,
+		lightSourceControlData,
+		isLightEnabled,
+		player,
+		copier
+		);
+}
+
+bool URecipeCopierRCO::ApplyLightsControlPanel_Validate
+(
+	AFGBuildableLightsControlPanel* lightsControlPanel,
+	const FLightSourceControlData& lightSourceControlData,
+	bool isLightEnabled,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
 )

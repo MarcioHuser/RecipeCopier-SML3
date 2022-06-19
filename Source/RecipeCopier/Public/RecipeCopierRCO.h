@@ -4,6 +4,7 @@
 #include "FGRemoteCallObject.h"
 #include "CommonTypes.h"
 #include "FGRailroadTimeTable.h"
+#include "Buildables/FGBuildableLightSource.h"
 #include "Buildables/FGBuildableSplitterSmart.h"
 #include "Resources/FGEquipmentDescriptor.h"
 #include "RecipeCopierRCO.generated.h"
@@ -78,6 +79,16 @@ public:
 	(
 		class AFGTrain* train,
 		const TArray<FTimeTableStop>& trainStops,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
+
+	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable, Category="RecipeCopierRCO")
+	void ApplyLightsControlPanel
+	(
+		class AFGBuildableLightsControlPanel* lightsControlPanel,
+		const FLightSourceControlData& lightSourceControlData,
+		bool isLightEnabled,
 		AFGCharacterPlayer* player,
 		ARecipeCopierEquipment* copier
 	);

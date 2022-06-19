@@ -4,6 +4,7 @@
 #include "FGRailroadTimeTable.h"
 #include "FGRecipe.h"
 #include "RecipeCopier_ConfigStruct.h"
+#include "Buildables/FGBuildableLightSource.h"
 #include "Buildables/FGBuildableSplitterSmart.h"
 
 #include "RecipeCopierLogic.generated.h"
@@ -125,6 +126,24 @@ public:
 		const TArray<FTimeTableStop>& trainStops,
 		AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
+	);
+
+	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
+	static void ApplyLightsControlPanel
+	(
+		class AFGBuildableLightsControlPanel* lightsControlPanel,
+		const FLightSourceControlData& lightSourceControlData,
+		bool isLightEnabled,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
+	static void ApplyLightsControlPanel_Server
+	(
+		class AFGBuildableLightsControlPanel* lightsControlPanel,
+		const FLightSourceControlData& lightSourceControlData,
+		bool isLightEnabled,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
 	);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")

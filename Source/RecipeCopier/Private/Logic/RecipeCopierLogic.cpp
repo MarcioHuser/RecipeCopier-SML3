@@ -10,6 +10,7 @@
 #include "FGTrainStationIdentifier.h"
 #include "RecipeCopierEquipment.h"
 #include "RecipeCopierRCO.h"
+#include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableManufacturer.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Util/Optimize.h"
@@ -559,6 +560,73 @@ void ARecipeCopierLogic::ApplyTrainInfo_Server
 
 	timetable->SetStops(trainStops);
 	timetable->PurgeInvalidStops();
+
+	copier->ClearTargets();
+}
+
+void ARecipeCopierLogic::ApplyLightsControlPanel
+(
+	class AFGBuildableLightsControlPanel* lightsControlPanel,
+	const FLightSourceControlData& lightSourceControlData,
+	bool isLightEnabled,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	if (lightsControlPanel->HasAuthority())
+	{
+		ApplyLightsControlPanel_Server(
+			lightsControlPanel,
+			lightSourceControlData,
+			isLightEnabled,
+			player,
+			copier
+			);
+	}
+	else
+	{
+		auto rco = URecipeCopierRCO::getRCO(lightsControlPanel);
+		if (rco)
+		{
+			rco->ApplyLightsControlPanel(
+				lightsControlPanel,
+				lightSourceControlData,
+				isLightEnabled,
+				player,
+				copier
+				);
+		}
+	}
+}
+
+void ARecipeCopierLogic::ApplyLightsControlPanel_Server
+(
+	class AFGBuildableLightsControlPanel* lightsControlPanel,
+	const FLightSourceControlData& lightSourceControlData,
+	bool isLightEnabled,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	if (!lightsControlPanel || !lightsControlPanel->HasAuthority())
+	{
+		return;
+	}
+
+	auto lightControlData = lightsControlPanel->GetLightControlData();
+
+	lightControlData.ColorSlotIndex = lightSourceControlData.ColorSlotIndex;
+	lightControlData.Intensity = lightSourceControlData.Intensity;
+	lightControlData.IsTimeOfDayAware = lightSourceControlData.IsTimeOfDayAware;
+
+	lightsControlPanel->SetLightControlData(lightControlData);
+
+	lightsControlPanel->SetLightEnabled(isLightEnabled);
+
+	if(lightsControlPanel->OnLightControlPanelStateChanged.IsBound())
+	{
+		lightsControlPanel->OnLightControlPanelStateChanged.Broadcast(isLightEnabled);
+	}
 
 	copier->ClearTargets();
 }

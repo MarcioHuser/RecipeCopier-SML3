@@ -128,6 +128,7 @@ void ARecipeCopierEquipment::BeginPlay()
 	widgetSmartSplitterInfo->SetWorldScale3D(FVector::ZeroVector);
 	widgetTrainInfo->SetWorldScale3D(FVector::ZeroVector);
 	widgetSignInfo->SetWorldScale3D(FVector::ZeroVector);
+	widgetLightsControlPanel->SetWorldScale3D(FVector::ZeroVector);
 }
 
 FString ARecipeCopierEquipment::GetAuthorityAndPlayer(const AActor* actor)
@@ -143,12 +144,14 @@ void ARecipeCopierEquipment::SetTargets
 	AFGBuildableSplitterSmart* smartSplitter,
 	AFGTrain* train,
 	AFGBuildableWidgetSign* widgetSign,
+	AFGBuildableLightsControlPanel* lightsControlPanel,
 	AFGBuildableFactory* factory
 )
 {
 	targetFactory = factory;
 	targetSmartSplitter = smartSplitter;
 	targetWidgetSign = widgetSign;
+	targetLightsControlPanel = lightsControlPanel;
 	targetTrain = train;
 }
 
@@ -162,6 +165,7 @@ void ARecipeCopierEquipment::HandleAimSmartSplitter(class AFGCharacterPlayer* ch
 
 		SetTargets(
 			smartSplitter,
+			nullptr,
 			nullptr,
 			nullptr,
 			nullptr
@@ -206,6 +210,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 			RC_LOG_Display_Condition(*GetPathNameSafe(factory), TEXT(": RecipeCopier: Set new target factory target"));
 
 			SetTargets(
+				nullptr,
 				nullptr,
 				nullptr,
 				nullptr,
@@ -277,6 +282,7 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			nullptr,
 			nullptr,
 			widgetSign,
+			nullptr,
 			nullptr
 			);
 
@@ -398,6 +404,7 @@ void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character,
 			nullptr,
 			train,
 			nullptr,
+			nullptr,
 			nullptr
 			);
 
@@ -443,6 +450,50 @@ void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character,
 void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel)
 {
 	character->GetOutline()->ShowOutline(lightsControlPanel, EOutlineColor::OC_USABLE);
+
+	if (lightsControlPanel != targetLightsControlPanel)
+	{
+		RC_LOG_Display_Condition(*GetPathNameSafe(lightsControlPanel), TEXT(": RecipeCopier: Set new target lights control panel"));
+
+		SetTargets(
+			nullptr,
+			nullptr,
+			nullptr,
+			lightsControlPanel,
+			nullptr
+			);
+
+		aimedLightSourceControlData = lightsControlPanel->GetLightControlData();
+		aimedIsLightEnabled = lightsControlPanel->IsLightEnabled();
+
+		if (aimedLightSourceControlData.Intensity != selectedLightSourceControlData.Intensity ||
+			aimedLightSourceControlData.IsTimeOfDayAware != selectedLightSourceControlData.IsTimeOfDayAware ||
+			aimedLightSourceControlData.ColorSlotIndex != selectedLightSourceControlData.ColorSlotIndex ||
+			aimedIsLightEnabled != selectedIsLightEnabled)
+		{
+			if (pointLight)
+			{
+				pointLight->SetIntensity(50);
+				pointLight->SetLightColor(FColor(0x0, 0xff, 0x0, 0xff));
+			}
+		}
+		else
+		{
+			if (pointLight)
+			{
+				pointLight->SetIntensity(0);
+			}
+		}
+
+		SetWidgetLightsControlPanelInfo(
+			aimedLightSourceControlData,
+			selectedLightSourceControlData,
+			aimedIsLightEnabled,
+			selectedIsLightEnabled
+			);
+
+		SetTextureWidget(currentWidgetInfo = widgetLightsControlPanel);
+	}
 }
 
 void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
@@ -475,10 +526,10 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 		{
 			HandleAimSign(character, widgetSign);
 		}
-		// else if (auto lightsControlPanel = Cast<AFGBuildableLightsControlPanel>(hitActor))
-		// {
-		// 	HandleAimLightsControlPanel(character, lightsControlPanel);
-		// }
+		else if (auto lightsControlPanel = Cast<AFGBuildableLightsControlPanel>(hitActor))
+		{
+			HandleAimLightsControlPanel(character, lightsControlPanel);
+		}
 		else if (auto factory = Cast<AFGBuildableFactory>(hitActor))
 		{
 			HandleAimFactory(playerController, character, factory);
@@ -543,6 +594,10 @@ void ARecipeCopierEquipment::CopyTarget()
 	else if (targetTrain)
 	{
 		CopyTrain();
+	}
+	else if (targetLightsControlPanel)
+	{
+		CopyLightsControlPanel();
 	}
 	else
 	{
@@ -627,9 +682,25 @@ void ARecipeCopierEquipment::CopyTrain()
 		);
 }
 
+void ARecipeCopierEquipment::CopyLightsControlPanel()
+{
+	RC_LOG_Display_Condition(*GetPathNameSafe(targetSmartSplitter), TEXT(": RecipeCopier: Set new target lioghts control panel"));
+
+	selectedLightSourceControlData = aimedLightSourceControlData;
+	selectedIsLightEnabled = aimedIsLightEnabled;
+
+	SetWidgetLightsControlPanelInfo(
+		aimedLightSourceControlData,
+		selectedLightSourceControlData,
+		aimedIsLightEnabled,
+		selectedIsLightEnabled
+		);
+}
+
 void ARecipeCopierEquipment::ClearTargets_Implementation()
 {
 	SetTargets(
+		nullptr,
 		nullptr,
 		nullptr,
 		nullptr,
@@ -676,6 +747,18 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		aimedTrainStops = TArray<FTimeTableStop>(),
 		selectedTrainStops
 		);
+
+	SetWidgetLightsControlPanelInfo(
+		aimedLightSourceControlData = FLightSourceControlData(),
+		selectedLightSourceControlData,
+		aimedIsLightEnabled = false,
+		selectedIsLightEnabled
+		);
+
+	if (pointLight)
+	{
+		pointLight->SetIntensity(0);
+	}
 }
 
 void ARecipeCopierEquipment::ApplyTarget()
@@ -732,6 +815,16 @@ void ARecipeCopierEquipment::ApplyTarget()
 		ARecipeCopierLogic::ApplyTrainInfo(
 			targetTrain,
 			selectedTrainStops,
+			GetInstigatorCharacter(),
+			this
+			);
+	}
+	else if (targetLightsControlPanel)
+	{
+		ARecipeCopierLogic::ApplyLightsControlPanel(
+			targetLightsControlPanel,
+			selectedLightSourceControlData,
+			selectedIsLightEnabled,
 			GetInstigatorCharacter(),
 			this
 			);
