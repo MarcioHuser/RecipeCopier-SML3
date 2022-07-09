@@ -12,6 +12,7 @@
 #include "RecipeCopierRCO.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableManufacturer.h"
+#include "Buildables/FGBuildablePipelinePump.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Util/Optimize.h"
 #include "Util/Logging.h"
@@ -26,6 +27,7 @@ ARecipeCopierLogic* ARecipeCopierLogic::singleton = nullptr;
 FRecipeCopier_ConfigStruct ARecipeCopierLogic::configuration;
 TSubclassOf<UFGItemDescriptor> ARecipeCopierLogic::shardItemDescriptor;
 TSubclassOf<AFGBuildableSplitterSmart> ARecipeCopierLogic::programmableSplitterClass;
+TSubclassOf<AFGBuildablePipelinePump> ARecipeCopierLogic::valveClass;
 
 inline FString getEnumItemName(TCHAR* name, int value)
 {
@@ -54,11 +56,13 @@ void ARecipeCopierLogic::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ARecipeCopierLogic::Initialize
 (
 	TSubclassOf<UFGItemDescriptor> in_shardItemDescriptor,
-	TSubclassOf<AFGBuildableSplitterSmart> in_programmableSplitterClass
+	TSubclassOf<AFGBuildableSplitterSmart> in_programmableSplitterClass,
+	TSubclassOf<AFGBuildablePipelinePump> in_valveClass
 )
 {
 	shardItemDescriptor = in_shardItemDescriptor;
 	programmableSplitterClass = in_programmableSplitterClass;
+	valveClass = in_valveClass;
 	singleton = this;
 }
 
@@ -620,13 +624,64 @@ void ARecipeCopierLogic::ApplyLightsControlPanel_Server
 	lightControlData.IsTimeOfDayAware = lightSourceControlData.IsTimeOfDayAware;
 
 	lightsControlPanel->SetLightControlData(lightControlData);
+	lightsControlPanel->SetLightDataOnControlledLights(lightControlData);
 
 	lightsControlPanel->SetLightEnabled(isLightEnabled);
 
-	if(lightsControlPanel->OnLightControlPanelStateChanged.IsBound())
+	/*if (lightsControlPanel->OnLightControlPanelStateChanged.IsBound())
 	{
 		lightsControlPanel->OnLightControlPanelStateChanged.Broadcast(isLightEnabled);
+	}*/
+
+	copier->ClearTargets();
+}
+
+void ARecipeCopierLogic::ApplyValve
+(
+	class AFGBuildablePipelinePump* valve,
+	float userFlowLimit,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	if (valve->HasAuthority())
+	{
+		ApplyValve_Server(
+			valve,
+			userFlowLimit,
+			player,
+			copier
+			);
 	}
+	else
+	{
+		auto rco = URecipeCopierRCO::getRCO(valve);
+		if (rco)
+		{
+			rco->ApplyValve(
+				valve,
+				userFlowLimit,
+				player,
+				copier
+				);
+		}
+	}
+}
+
+void ARecipeCopierLogic::ApplyValve_Server
+(
+	class AFGBuildablePipelinePump* valve,
+	float userFlowLimit,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	if (!valve || !valve->HasAuthority())
+	{
+		return;
+	}
+
+	valve->SetUserFlowLimit(userFlowLimit);
 
 	copier->ClearTargets();
 }

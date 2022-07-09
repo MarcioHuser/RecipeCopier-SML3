@@ -14,6 +14,7 @@
 #include "FGTrain.h"
 #include "Buildables/FGBuildableLightsControlPanel.h"
 #include "Buildables/FGBuildableManufacturer.h"
+#include "Buildables/FGBuildablePipelinePump.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Components/WidgetComponent.h"
 
@@ -128,7 +129,8 @@ void ARecipeCopierEquipment::BeginPlay()
 	widgetSmartSplitterInfo->SetWorldScale3D(FVector::ZeroVector);
 	widgetTrainInfo->SetWorldScale3D(FVector::ZeroVector);
 	widgetSignInfo->SetWorldScale3D(FVector::ZeroVector);
-	widgetLightsControlPanel->SetWorldScale3D(FVector::ZeroVector);
+	widgetLightsControlPanelInfo->SetWorldScale3D(FVector::ZeroVector);
+	widgetValveInfo->SetWorldScale3D(FVector::ZeroVector);
 }
 
 FString ARecipeCopierEquipment::GetAuthorityAndPlayer(const AActor* actor)
@@ -145,14 +147,16 @@ void ARecipeCopierEquipment::SetTargets
 	AFGTrain* train,
 	AFGBuildableWidgetSign* widgetSign,
 	AFGBuildableLightsControlPanel* lightsControlPanel,
+	class AFGBuildablePipelinePump* valve,
 	AFGBuildableFactory* factory
 )
 {
-	targetFactory = factory;
 	targetSmartSplitter = smartSplitter;
+	targetTrain = train;
 	targetWidgetSign = widgetSign;
 	targetLightsControlPanel = lightsControlPanel;
-	targetTrain = train;
+	targetValve = valve;
+	targetFactory = factory;
 }
 
 void ARecipeCopierEquipment::HandleAimSmartSplitter(class AFGCharacterPlayer* character, AFGBuildableSplitterSmart* smartSplitter)
@@ -165,6 +169,7 @@ void ARecipeCopierEquipment::HandleAimSmartSplitter(class AFGCharacterPlayer* ch
 
 		SetTargets(
 			smartSplitter,
+			nullptr,
 			nullptr,
 			nullptr,
 			nullptr,
@@ -210,6 +215,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 			RC_LOG_Display_Condition(*GetPathNameSafe(factory), TEXT(": RecipeCopier: Set new target factory target"));
 
 			SetTargets(
+				nullptr,
 				nullptr,
 				nullptr,
 				nullptr,
@@ -282,6 +288,7 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			nullptr,
 			nullptr,
 			widgetSign,
+			nullptr,
 			nullptr,
 			nullptr
 			);
@@ -405,6 +412,7 @@ void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character,
 			train,
 			nullptr,
 			nullptr,
+			nullptr,
 			nullptr
 			);
 
@@ -460,6 +468,7 @@ void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlaye
 			nullptr,
 			nullptr,
 			lightsControlPanel,
+			nullptr,
 			nullptr
 			);
 
@@ -492,7 +501,51 @@ void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlaye
 			selectedIsLightEnabled
 			);
 
-		SetTextureWidget(currentWidgetInfo = widgetLightsControlPanel);
+		SetTextureWidget(currentWidgetInfo = widgetLightsControlPanelInfo);
+	}
+}
+
+void ARecipeCopierEquipment::HandleAimValve(class AFGCharacterPlayer* character, class AFGBuildablePipelinePump* valve)
+{
+	character->GetOutline()->ShowOutline(valve, EOutlineColor::OC_USABLE);
+
+	if (valve != targetValve)
+	{
+		RC_LOG_Display_Condition(*GetPathNameSafe(valve), TEXT(": RecipeCopier: Set new target valve"));
+
+		SetTargets(
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			valve,
+			nullptr
+			);
+
+		aimedUserFlowLimit = valve->GetUserFlowLimit();
+
+		if (aimedUserFlowLimit != selectedUserFlowLimit)
+		{
+			if (pointLight)
+			{
+				pointLight->SetIntensity(50);
+				pointLight->SetLightColor(FColor(0x0, 0xff, 0x0, 0xff));
+			}
+		}
+		else
+		{
+			if (pointLight)
+			{
+				pointLight->SetIntensity(0);
+			}
+		}
+
+		SetWidgetValveInfo(
+			aimedUserFlowLimit,
+			selectedUserFlowLimit
+			);
+
+		SetTextureWidget(currentWidgetInfo = widgetValveInfo);
 	}
 }
 
@@ -529,6 +582,17 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 		else if (auto lightsControlPanel = Cast<AFGBuildableLightsControlPanel>(hitActor))
 		{
 			HandleAimLightsControlPanel(character, lightsControlPanel);
+		}
+		else if (auto valve = Cast<AFGBuildablePipelinePump>(hitActor))
+		{
+			if (hitActor->GetClass()->IsChildOf(ARecipeCopierLogic::valveClass))
+			{
+				HandleAimValve(character, valve);
+			}
+			else
+			{
+				clearTarget = true;
+			}
 		}
 		else if (auto factory = Cast<AFGBuildableFactory>(hitActor))
 		{
@@ -598,6 +662,10 @@ void ARecipeCopierEquipment::CopyTarget()
 	else if (targetLightsControlPanel)
 	{
 		CopyLightsControlPanel();
+	}
+	else if (targetValve)
+	{
+		CopyValve();
 	}
 	else
 	{
@@ -684,7 +752,7 @@ void ARecipeCopierEquipment::CopyTrain()
 
 void ARecipeCopierEquipment::CopyLightsControlPanel()
 {
-	RC_LOG_Display_Condition(*GetPathNameSafe(targetSmartSplitter), TEXT(": RecipeCopier: Set new target lioghts control panel"));
+	RC_LOG_Display_Condition(*GetPathNameSafe(targetSmartSplitter), TEXT(": RecipeCopier: Set new target lights control panel"));
 
 	selectedLightSourceControlData = aimedLightSourceControlData;
 	selectedIsLightEnabled = aimedIsLightEnabled;
@@ -697,9 +765,22 @@ void ARecipeCopierEquipment::CopyLightsControlPanel()
 		);
 }
 
+void ARecipeCopierEquipment::CopyValve()
+{
+	RC_LOG_Display_Condition(*GetPathNameSafe(targetSmartSplitter), TEXT(": RecipeCopier: Set new target valve"));
+
+	selectedUserFlowLimit = aimedUserFlowLimit;
+
+	SetWidgetValveInfo(
+		selectedUserFlowLimit,
+		aimedUserFlowLimit
+		);
+}
+
 void ARecipeCopierEquipment::ClearTargets_Implementation()
 {
 	SetTargets(
+		nullptr,
 		nullptr,
 		nullptr,
 		nullptr,
@@ -753,6 +834,11 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedLightSourceControlData,
 		aimedIsLightEnabled = false,
 		selectedIsLightEnabled
+		);
+
+	SetWidgetValveInfo(
+		aimedUserFlowLimit = 0,
+		selectedUserFlowLimit
 		);
 
 	if (pointLight)
@@ -825,6 +911,15 @@ void ARecipeCopierEquipment::ApplyTarget()
 			targetLightsControlPanel,
 			selectedLightSourceControlData,
 			selectedIsLightEnabled,
+			GetInstigatorCharacter(),
+			this
+			);
+	}
+	else if (targetValve)
+	{
+		ARecipeCopierLogic::ApplyValve(
+			targetValve,
+			selectedUserFlowLimit,
 			GetInstigatorCharacter(),
 			this
 			);

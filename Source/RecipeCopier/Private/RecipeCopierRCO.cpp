@@ -232,6 +232,33 @@ bool URecipeCopierRCO::ApplyLightsControlPanel_Validate
 	return true;
 }
 
+void URecipeCopierRCO::ApplyValve_Implementation
+(
+	AFGBuildablePipelinePump* valve,
+	float userFlowLimit,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	ARecipeCopierLogic::ApplyValve_Server(
+		valve,
+		userFlowLimit,
+		player,
+		copier
+		);
+}
+
+bool URecipeCopierRCO::ApplyValve_Validate
+(
+	AFGBuildablePipelinePump* valve,
+	float userFlowLimit,
+	AFGCharacterPlayer* player,
+	ARecipeCopierEquipment* copier
+)
+{
+	return true;
+}
+
 #ifndef OPTIMIZE
 #pragma optimize( "", on )
 #endif

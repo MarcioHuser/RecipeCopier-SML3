@@ -37,6 +37,8 @@ public:
 	virtual void CopyTrain();
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
 	virtual void CopyLightsControlPanel();
+	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
+	virtual void CopyValve();
 
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier", NetMulticast, Reliable)
 	virtual void ClearTargets();
@@ -93,6 +95,13 @@ public:
 		bool savedIsLightEnabled
 	);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
+	void SetWidgetValveInfo
+	(
+		float currentUserFlowLimit,
+		float savedUserFlowLimit
+	);
+
 	UFUNCTION(BlueprintImplementableEvent, Category="RecipeCopier")
 	void PlayObjectScannerCycleRightAnim();
 
@@ -105,6 +114,7 @@ public:
 		class AFGTrain* train,
 		class AFGBuildableWidgetSign* widgetSign,
 		class AFGBuildableLightsControlPanel* lightsControlPanel,
+		class AFGBuildablePipelinePump* valve,
 		class AFGBuildableFactory* factory
 	);
 
@@ -115,6 +125,7 @@ public:
 	virtual void HandleAimSign(class AFGCharacterPlayer* character, class AFGBuildableWidgetSign* widgetSign);
 	virtual void HandleAimTrain(class AFGCharacterPlayer* character, class AFGTrain* train);
 	virtual void HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel);
+	virtual void HandleAimValve(class AFGCharacterPlayer* character, class AFGBuildablePipelinePump* valve);
 
 	static FString GetAuthorityAndPlayer(const AActor* actor);
 
@@ -219,6 +230,14 @@ protected:
 	bool selectedIsLightEnabled = false;
 
 	UPROPERTY(BlueprintReadWrite)
+	class AFGBuildablePipelinePump* targetValve = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	float aimedUserFlowLimit = 0;
+	UPROPERTY(BlueprintReadWrite)
+	float selectedUserFlowLimit = 0;
+	
+
+	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;
 
 	UPROPERTY(BlueprintReadWrite)
@@ -230,7 +249,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	UWidgetComponent* widgetSignInfo = nullptr;
 	UPROPERTY(BlueprintReadWrite)
-	UWidgetComponent* widgetLightsControlPanel = nullptr;
+	UWidgetComponent* widgetLightsControlPanelInfo = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	UWidgetComponent* widgetValveInfo = nullptr;
 
 	UWidgetComponent* currentWidgetInfo = nullptr;
 

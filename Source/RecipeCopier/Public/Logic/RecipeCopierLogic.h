@@ -30,8 +30,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	virtual void Initialize
 	(
-		UPARAM(DisplayName = "Shard Item Descriptor") TSubclassOf<UFGItemDescriptor> in_shardItemDescriptor,
-		UPARAM(DisplayName = "Programmable Splitter Class") TSubclassOf<AFGBuildableSplitterSmart> in_programmableSplitterClass
+		UPARAM(DisplayName = "Shard Item Descriptor") TSubclassOf<class UFGItemDescriptor> in_shardItemDescriptor,
+		UPARAM(DisplayName = "Programmable Splitter Class") TSubclassOf<class AFGBuildableSplitterSmart> in_programmableSplitterClass,
+		UPARAM(DisplayName = "Valve Class") TSubclassOf<class AFGBuildablePipelinePump> in_valveClass
 	);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
@@ -147,6 +148,22 @@ public:
 	);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
+	static void ApplyValve
+	(
+		class AFGBuildablePipelinePump* valve,
+		float userFlowLimit,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
+	static void ApplyValve_Server
+	(
+		class AFGBuildablePipelinePump* valve,
+		float userFlowLimit,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
+
+	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	static bool CanProduceRecipe(class AFGBuildableManufacturer* manufacturer, TSubclassOf<UFGRecipe> recipe);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
@@ -187,4 +204,5 @@ public:
 	static FRecipeCopier_ConfigStruct configuration;
 	static TSubclassOf<UFGItemDescriptor> shardItemDescriptor;
 	static TSubclassOf<AFGBuildableSplitterSmart> programmableSplitterClass;
+	static TSubclassOf<AFGBuildablePipelinePump> valveClass;
 };

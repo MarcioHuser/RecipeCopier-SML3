@@ -93,6 +93,15 @@ public:
 		ARecipeCopierEquipment* copier
 	);
 
+	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable, Category="RecipeCopierRCO")
+	void ApplyValve
+	(
+		class AFGBuildablePipelinePump* valve,
+		float userFlowLimit,
+		AFGCharacterPlayer* player,
+		ARecipeCopierEquipment* copier
+	);
+
 	UPROPERTY(Replicated)
 	bool dummy = true;
 };
