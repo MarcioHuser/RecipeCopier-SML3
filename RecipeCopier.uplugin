@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
 	"Version": 2,
-	"VersionName": "2.3.3",
-	"SemVersion": "2.3.3",
+	"VersionName": "2.3.4",
+	"SemVersion": "2.3.4",
 	"FriendlyName": "Settings Copier",
 	"Description": "Copy various settings from a building into another by pointing and clicking!",
 	"Category": "Modding",
