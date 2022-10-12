@@ -173,6 +173,26 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 					RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
 				}
 			}
+
+			auto arrayProperty = CastField<FArrayProperty>(*property);
+			if (arrayProperty)
+			{
+				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
+
+				RC_LOG_Display(TEXT("            - CPPTypeForwardDeclaration = "), arrayProperty->GetCPPTypeForwardDeclaration());
+				RC_LOG_Display(TEXT("            - Num = "), arrayHelper.Num());
+
+				auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner);
+				if (arrayObjectProperty)
+				{
+					for (auto x = 0; x < arrayHelper.Num(); x++)
+					{
+						void* ObjectContainer = arrayHelper.GetRawPtr(x);
+						UObject* Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
+						RC_LOG_Display(TEXT("            - "), x, TEXT(" = "), GetPathNameSafe(Object));
+					}
+				}
+			}
 		}
 	}
 }
