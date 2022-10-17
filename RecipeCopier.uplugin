@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
 	"Version": 2,
-	"VersionName": "2.3.4",
-	"SemVersion": "2.3.4",
+	"VersionName": "2.3.5",
+	"SemVersion": "2.3.5",
 	"FriendlyName": "Settings Copier",
 	"Description": "Copy various settings from a building into another by pointing and clicking!",
 	"Category": "Modding",
@@ -30,7 +30,7 @@
 		},
 		{
 			"Name": "MarcioCommonLibs",
-			"SemVersion": "^1.1.2",
+			"SemVersion": "^1.1.3",
 			"Enabled": true
 		}
 	]
