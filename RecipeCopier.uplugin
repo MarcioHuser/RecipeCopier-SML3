@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
 	"Version": 2,
-	"VersionName": "2.3.5",
-	"SemVersion": "2.3.5",
+	"VersionName": "2.4.0",
+	"SemVersion": "2.4.0",
 	"FriendlyName": "Settings Copier",
 	"Description": "Copy various settings from a building into another by pointing and clicking!",
 	"Category": "Modding",
@@ -25,7 +25,7 @@
 	"Plugins": [
 		{
 			"Name": "SML",
-			"SemVersion": "^3.3.2",
+			"SemVersion": "^3.4.1",
 			"Enabled": true
 		},
 		{
