@@ -549,7 +549,7 @@ void ARecipeCopierEquipment::HandleAimValve(class AFGCharacterPlayer* character,
 	}
 }
 
-void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
+void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor, bool& wasHit)
 {
 	if (auto playerController = Cast<AFGPlayerController>(GetInstigatorController()))
 	{
@@ -602,6 +602,8 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor)
 		{
 			clearTarget = true;
 		}
+
+		wasHit = !clearTarget;
 
 		if (clearTarget)
 		{

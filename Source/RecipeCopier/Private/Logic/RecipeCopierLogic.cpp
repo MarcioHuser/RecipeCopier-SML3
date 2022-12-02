@@ -99,6 +99,7 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 {
 	if (IS_RC_LOG_LEVEL(ELogVerbosity::Log))
 	{
+		RC_LOG_Display(TEXT("Object "), *obj->GetPathName());
 		RC_LOG_Display(TEXT("Unknown Class "), *obj->GetClass()->GetPathName());
 
 		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
@@ -164,13 +165,24 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 				RC_LOG_Display(TEXT("        = "), *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)));
 			}
 
-			auto widgetComponentProperty = CastField<FObjectProperty>(*property);
-			if (widgetComponentProperty && property->GetCPPType() == TEXT("UWidgetComponent*"))
+			auto objectProperty = CastField<FObjectProperty>(*property);
+			if (objectProperty)
 			{
-				auto widgetComponent = widgetComponentProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj);
-				if (widgetComponent)
+				if(property->GetCPPType() == TEXT("UWidgetComponent*"))
 				{
-					RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
+					auto widgetComponent = objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj);
+					if (widgetComponent)
+					{
+						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
+					}
+				}
+				if(property->GetCPPType() == TEXT("AActor*"))
+				{
+					auto actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
+					if (actor)
+					{
+						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(actor));
+					}
 				}
 			}
 
@@ -189,7 +201,7 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 					{
 						void* ObjectContainer = arrayHelper.GetRawPtr(x);
 						UObject* Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
-						RC_LOG_Display(TEXT("            - "), x, TEXT(" = "), GetPathNameSafe(Object));
+						RC_LOG_Display(TEXT("            - "), x, TEXT(" = "), *GetPathNameSafe(Object));
 					}
 				}
 			}

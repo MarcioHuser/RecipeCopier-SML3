@@ -19,7 +19,7 @@ public:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
-	virtual void HandleHitActor(AActor* hitActor);
+	virtual void HandleHitActor(AActor* hitActor, bool& wasHit);
 
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
 	virtual void PrimaryFirePressed();
