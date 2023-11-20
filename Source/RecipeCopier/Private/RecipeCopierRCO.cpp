@@ -4,6 +4,8 @@
 #include "Util/Optimize.h"
 
 #include "FGPlayerController.h"
+#include "Net/UnrealNetwork.h"
+#include "Util/MapHelpers.h"
 
 #ifndef OPTIMIZE
 #pragma optimize( "", off )
@@ -156,8 +158,10 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	const FLinearColor& auxiliaryColor,
 	float emissive,
 	float glossiness,
-	const TMap<FString, FString>& texts,
-	const TMap<FString, int32>& iconIds,
+	const TArray<FString>& textKeys,
+	const TArray<FString>& textValues,
+	const TArray<FString>& iconIdKeys,
+	const TArray<int32>& iconIdValues,
 	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
@@ -165,6 +169,12 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	ARecipeCopierEquipment* copier
 )
 {
+	TMap<FString, FString> texts;
+	TMap<FString, int32> iconIds;
+
+	ArraysToMap(textKeys, textValues, texts);
+	ArraysToMap(iconIdKeys, iconIdValues, iconIds);
+
 	ARecipeCopierLogic::ApplyWidgetSignInfo_Server(
 		widgetSign,
 		foregroundColor,
@@ -190,8 +200,10 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	const FLinearColor& auxiliaryColor,
 	float emissive,
 	float glossiness,
-	const TMap<FString, FString>& texts,
-	const TMap<FString, int32>& iconIds,
+	const TArray<FString>& textKeys,
+	const TArray<FString>& textValues,
+	const TArray<FString>& iconIdKeys,
+	const TArray<int32>& iconIdValues,
 	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,

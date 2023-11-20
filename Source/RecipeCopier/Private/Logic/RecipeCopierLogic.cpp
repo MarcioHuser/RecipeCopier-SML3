@@ -18,6 +18,7 @@
 #include "Util/Logging.h"
 
 #include "Resources/FGItemDescriptor.h"
+#include "Util/MapHelpers.h"
 
 #ifndef OPTIMIZE
 #pragma optimize( "", off )
@@ -453,6 +454,15 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 		auto rco = URecipeCopierRCO::getRCO(widgetSign);
 		if (rco)
 		{
+			TArray<FString> textKeys;
+			TArray<FString> textValues;
+			
+			TArray<FString> iconIdKeys;
+			TArray<int32> iconIdValues;
+			
+			MapToArrays(texts, textKeys, textValues);
+			MapToArrays(iconIds, iconIdKeys, iconIdValues);
+			
 			rco->ApplyWidgetSignInfo(
 				widgetSign,
 				foregroundColor,
@@ -460,8 +470,10 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 				auxiliaryColor,
 				emissive,
 				glossiness,
-				texts,
-				iconIds,
+				textKeys,
+				textValues,
+				iconIdKeys,
+				iconIdValues,
 				prefabLayout,
 				signTypeDesc,
 				signCopyMode,

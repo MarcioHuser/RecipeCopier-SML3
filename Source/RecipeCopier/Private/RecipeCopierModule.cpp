@@ -2,6 +2,8 @@
 #include "util/Logging.h"
 #include "Util/Optimize.h"
 
+#include "UObject/CoreNet.h"
+
 #include "FGCircuitSubsystem.h"
 #include "FGPowerCircuit.h"
 #include "FGPowerInfoComponent.h"
