@@ -169,18 +169,18 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 			auto objectProperty = CastField<FObjectProperty>(*property);
 			if (objectProperty)
 			{
-				if(property->GetCPPType() == TEXT("UWidgetComponent*"))
+				if (property->GetCPPType() == TEXT("UWidgetComponent*"))
 				{
 					auto widgetComponent = objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj);
-					if (widgetComponent)
+					if (IsValid(widgetComponent))
 					{
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
 					}
 				}
-				if(property->GetCPPType() == TEXT("AActor*"))
+				if (property->GetCPPType() == TEXT("AActor*"))
 				{
 					auto actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
-					if (actor)
+					if (IsValid(actor))
 					{
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(actor));
 					}
@@ -456,13 +456,13 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 		{
 			TArray<FString> textKeys;
 			TArray<FString> textValues;
-			
+
 			TArray<FString> iconIdKeys;
 			TArray<int32> iconIdValues;
-			
+
 			MapToArrays(texts, textKeys, textValues);
 			MapToArrays(iconIds, iconIdKeys, iconIdValues);
-			
+
 			rco->ApplyWidgetSignInfo(
 				widgetSign,
 				foregroundColor,

@@ -18,6 +18,8 @@ public:
 
 	virtual void BeginPlay() override;
 
+	virtual void HandleDefaultEquipmentActionEvent( EDefaultEquipmentAction action, EDefaultEquipmentActionEvent actionEvent ) override;
+	
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
 	virtual void HandleHitActor(AActor* hitActor, bool& wasHit);
 
@@ -105,7 +107,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category="RecipeCopier")
 	void PlayObjectScannerCycleRightAnim();
 
-	virtual void CycleCopyMode(class AFGPlayerController* playerController);
+	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
+	virtual void CycleCopyMode();
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopier")
 	virtual void SetTargets

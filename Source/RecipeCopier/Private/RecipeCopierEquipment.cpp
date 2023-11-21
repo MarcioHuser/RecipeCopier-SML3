@@ -133,6 +133,14 @@ void ARecipeCopierEquipment::BeginPlay()
 	widgetValveInfo->SetWorldScale3D(FVector::ZeroVector);
 }
 
+void ARecipeCopierEquipment::HandleDefaultEquipmentActionEvent(EDefaultEquipmentAction action, EDefaultEquipmentActionEvent actionEvent)
+{
+	if (action == EDefaultEquipmentAction::PrimaryFire && actionEvent == EDefaultEquipmentActionEvent::Pressed)
+	{
+		PrimaryFirePressed();
+	}
+}
+
 FString ARecipeCopierEquipment::GetAuthorityAndPlayer(const AActor* actor)
 {
 	return FString(TEXT("Has Authority = ")) +
@@ -562,10 +570,10 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor, bool& wasHit)
 			ARecipeCopierLogic::DumpUnknownClass(hitActor);
 		}
 
-		if (playerController->WasInputKeyJustPressed(toggleKey))
-		{
-			CycleCopyMode(playerController);
-		}
+		// if (playerController->WasInputKeyJustPressed(toggleKey))
+		// {
+		// 	CycleCopyMode();
+		// }
 
 		if (auto smartSplitter = Cast<AFGBuildableSplitterSmart>(hitActor))
 		{
@@ -928,8 +936,14 @@ void ARecipeCopierEquipment::ApplyTarget()
 	}
 }
 
-void ARecipeCopierEquipment::CycleCopyMode(AFGPlayerController* playerController)
+void ARecipeCopierEquipment::CycleCopyMode()
 {
+	auto playerController = Cast<AFGPlayerController>(GetInstigatorController());
+	if (!playerController)
+	{
+		return;
+	}
+
 	auto isLeftControlDown = playerController->IsInputKeyDown(EKeys::LeftControl);
 	auto isLeftShiftDown = playerController->IsInputKeyDown(EKeys::LeftShift);
 	auto isLeftAltDown = playerController->IsInputKeyDown(EKeys::LeftAlt);
