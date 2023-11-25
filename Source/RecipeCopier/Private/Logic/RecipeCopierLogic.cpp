@@ -14,6 +14,7 @@
 #include "Buildables/FGBuildableManufacturer.h"
 #include "Buildables/FGBuildablePipelinePump.h"
 #include "Buildables/FGBuildableWidgetSign.h"
+#include "Reflection/BlueprintReflectionLibrary.h"
 #include "Util/Optimize.h"
 #include "Util/Logging.h"
 
@@ -101,7 +102,9 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 	if (IS_RC_LOG_LEVEL(ELogVerbosity::Log))
 	{
 		RC_LOG_Display(TEXT("Object "), *obj->GetPathName());
-		RC_LOG_Display(TEXT("Unknown Class "), *obj->GetClass()->GetPathName());
+		RC_LOG_Display(TEXT("Class "), *obj->GetClass()->GetPathName());
+
+		auto isStorageTeleporter = obj->GetClass()->GetPathName().EndsWith(TEXT("/StorageTeleporter/Buildables/ItemTeleporter/ItemTeleporter_Build.ItemTeleporter_Build_C"));
 
 		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
 		{
@@ -110,36 +113,77 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 
 		for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
 		{
+			auto floatProperty = CastField<FFloatProperty>(*property);
+			auto doubleProperty = CastField<FDoubleProperty>(*property);
+			auto intProperty = CastField<FIntProperty>(*property);
+			auto boolProperty = CastField<FBoolProperty>(*property);
+			auto structProperty = CastField<FStructProperty>(*property);
+			auto strProperty = CastField<FStrProperty>(*property);
+			auto textProperty = CastField<FTextProperty>(*property);
+			auto classProperty = CastField<FClassProperty>(*property);
+			auto objectProperty = CastField<FObjectProperty>(*property);
+			auto weakObjectProperty = CastField<FWeakObjectProperty>(*property);
+			auto arrayProperty = CastField<FArrayProperty>(*property);
+			auto byteProperty = CastField<FByteProperty>(*property);
+			auto nameProperty = CastField<FNameProperty>(*property);
+			auto enumProperty = CastField<FEnumProperty>(*property);
+
+			FString cppType;
+
+			if (floatProperty ||
+				doubleProperty ||
+				intProperty ||
+				boolProperty ||
+				structProperty ||
+				strProperty ||
+				textProperty ||
+				classProperty ||
+				objectProperty && objectProperty->PropertyClass ||
+				weakObjectProperty && weakObjectProperty->PropertyClass ||
+				arrayProperty ||
+				byteProperty ||
+				nameProperty ||
+				enumProperty
+				)
+			{
+				cppType = property->GetCPPType();
+			}
+			else
+			{
+				cppType = TEXT("<<Unknown>>");
+			}
+
 			RC_LOG_Display(
 				TEXT("    - "),
 				*property->GetName(),
 				TEXT(" ("),
-				*property->GetCPPType(),
+				*cppType,
 				TEXT(" / "),
 				*property->GetClass()->GetName(),
 				TEXT(")")
 				);
 
-			auto floatProperty = CastField<FFloatProperty>(*property);
 			if (floatProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), floatProperty->GetPropertyValue_InContainer(obj));
 			}
-
-			auto intProperty = CastField<FIntProperty>(*property);
-			if (intProperty)
+			else if (doubleProperty)
+			{
+				RC_LOG_Display(TEXT("        = "), doubleProperty->GetPropertyValue_InContainer(obj));
+			}
+			else if (intProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), intProperty->GetPropertyValue_InContainer(obj));
 			}
-
-			auto boolProperty = CastField<FBoolProperty>(*property);
-			if (boolProperty)
+			else if (byteProperty)
+			{
+				RC_LOG_Display(TEXT("        = "), byteProperty->GetPropertyValue_InContainer(obj));
+			}
+			else if (boolProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), boolProperty->GetPropertyValue_InContainer(obj) ? TEXT("true") : TEXT("false"));
 			}
-
-			auto structProperty = CastField<FStructProperty>(*property);
-			if (structProperty && property->GetCPPType() == TEXT("FFactoryTickFunction"))
+			else if (structProperty && cppType == TEXT("FFactoryTickFunction"))
 			{
 				auto factoryTick = structProperty->ContainerPtrToValuePtr<FFactoryTickFunction>(obj);
 				if (factoryTick)
@@ -147,29 +191,25 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 					RC_LOG_Display(TEXT("        - Tick Interval = "), factoryTick->TickInterval);
 				}
 			}
-
-			auto strProperty = CastField<FStrProperty>(*property);
-			if (strProperty)
+			else if (strProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), *strProperty->GetPropertyValue_InContainer(obj));
 			}
-
-			auto textProperty = CastField<FTextProperty>(*property);
-			if (textProperty)
+			else if (textProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), *textProperty->GetPropertyValue_InContainer(obj).ToString());
 			}
-
-			auto classProperty = CastField<FClassProperty>(*property);
-			if (classProperty)
+			else if (nameProperty)
+			{
+				RC_LOG_Display(TEXT("        = "), *nameProperty->GetPropertyValue_InContainer(obj).ToString());
+			}
+			else if (classProperty)
 			{
 				RC_LOG_Display(TEXT("        = "), *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)));
 			}
-
-			auto objectProperty = CastField<FObjectProperty>(*property);
-			if (objectProperty)
+			else if (objectProperty)
 			{
-				if (property->GetCPPType() == TEXT("UWidgetComponent*"))
+				if (cppType == TEXT("UWidgetComponent*"))
 				{
 					auto widgetComponent = objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj);
 					if (IsValid(widgetComponent))
@@ -177,7 +217,7 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
 					}
 				}
-				if (property->GetCPPType() == TEXT("AActor*"))
+				if (cppType == TEXT("AActor*"))
 				{
 					auto actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
 					if (IsValid(actor))
@@ -186,9 +226,7 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 					}
 				}
 			}
-
-			auto arrayProperty = CastField<FArrayProperty>(*property);
-			if (arrayProperty)
+			else if (arrayProperty)
 			{
 				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
 
@@ -205,6 +243,17 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 						RC_LOG_Display(TEXT("            - "), x, TEXT(" = "), *GetPathNameSafe(Object));
 					}
 				}
+			}
+			else if (enumProperty)
+			{
+				const auto objReflection = UBlueprintReflectionLibrary::ReflectObject(obj);
+
+				const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
+
+				auto currentValue=reflectedValue.GetCurrentValue();
+				auto enumType = enumProperty->GetEnum();
+				
+				RC_LOG_Display(TEXT("        = "),currentValue, TEXT(" ("), *(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString(), TEXT(")"));
 			}
 		}
 	}
