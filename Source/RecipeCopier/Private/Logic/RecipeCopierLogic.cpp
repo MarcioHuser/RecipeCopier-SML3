@@ -104,12 +104,12 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 		RC_LOG_Display(TEXT("Object "), *obj->GetPathName());
 		RC_LOG_Display(TEXT("Class "), *obj->GetClass()->GetPathName());
 
-		auto isStorageTeleporter = obj->GetClass()->GetPathName().EndsWith(TEXT("/StorageTeleporter/Buildables/ItemTeleporter/ItemTeleporter_Build.ItemTeleporter_Build_C"));
-
 		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
 		{
 			RC_LOG_Display(TEXT("    - Super: "), *cls->GetPathName());
 		}
+
+		RC_LOG_Display(TEXT("Properties"));
 
 		for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
 		{
@@ -217,7 +217,7 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
 					}
 				}
-				if (cppType == TEXT("AActor*"))
+				else if (cppType == TEXT("AActor*"))
 				{
 					auto actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
 					if (IsValid(actor))
@@ -230,17 +230,45 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 			{
 				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
 
-				RC_LOG_Display(TEXT("            - CPPTypeForwardDeclaration = "), arrayProperty->GetCPPTypeForwardDeclaration());
-				RC_LOG_Display(TEXT("            - Num = "), arrayHelper.Num());
+				RC_LOG_Display(TEXT("        - CPPTypeForwardDeclaration = "), arrayProperty->GetCPPTypeForwardDeclaration());
+				RC_LOG_Display(TEXT("        - Num = "), arrayHelper.Num());
 
 				auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner);
+				auto arrayWeakObjectProperty = CastField<FWeakObjectProperty>(arrayProperty->Inner);
+
 				if (arrayObjectProperty)
 				{
 					for (auto x = 0; x < arrayHelper.Num(); x++)
 					{
 						void* ObjectContainer = arrayHelper.GetRawPtr(x);
-						UObject* Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
-						RC_LOG_Display(TEXT("            - "), x, TEXT(" = "), *GetPathNameSafe(Object));
+						auto Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
+						RC_LOG_Display(
+							TEXT("            - "),
+							x,
+							TEXT(" = "),
+							*GetPathNameSafe(Object),
+							TEXT(" ("),
+							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
+							TEXT(" )")
+							);
+					}
+				}
+				else if (arrayWeakObjectProperty)
+				{
+					for (auto x = 0; x < arrayHelper.Num(); x++)
+					{
+						void* ObjectContainer = arrayHelper.GetRawPtr(x);
+						auto Object = arrayWeakObjectProperty->GetObjectPropertyValue(ObjectContainer);
+
+						RC_LOG_Display(
+							TEXT("            - "),
+							x,
+							TEXT(" = "),
+							*GetPathNameSafe(Object),
+							TEXT(" ("),
+							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
+							TEXT(" )")
+							);
 					}
 				}
 			}
@@ -250,12 +278,20 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 
 				const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
 
-				auto currentValue=reflectedValue.GetCurrentValue();
+				auto currentValue = reflectedValue.GetCurrentValue();
 				auto enumType = enumProperty->GetEnum();
-				
-				RC_LOG_Display(TEXT("        = "),currentValue, TEXT(" ("), *(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString(), TEXT(")"));
+
+				RC_LOG_Display(
+					TEXT("        = "),
+					currentValue,
+					TEXT(" ("),
+					*(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString(),
+					TEXT(")")
+					);
 			}
 		}
+
+		RC_LOG_Display(TEXT("===="));
 	}
 }
 
