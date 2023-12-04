@@ -41,6 +41,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	static void SetConfiguration(const struct FRecipeCopier_ConfigStruct& in_configuration);
 
+	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")
 	static void DumpUnknownClass(UObject* obj);
 
 	UFUNCTION(BlueprintCallable, Category="RecipeCopierLogic")

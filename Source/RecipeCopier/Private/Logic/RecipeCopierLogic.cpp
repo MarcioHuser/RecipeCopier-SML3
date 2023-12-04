@@ -160,6 +160,8 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 				*cppType,
 				TEXT(" / "),
 				*property->GetClass()->GetName(),
+				TEXT(" / RepIndex = "),
+				property->RepIndex,
 				TEXT(")")
 				);
 
@@ -211,16 +213,32 @@ void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
 			{
 				if (cppType == TEXT("UWidgetComponent*"))
 				{
-					auto widgetComponent = objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj);
-					if (IsValid(widgetComponent))
+					auto widgetComponent = GetValid(objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj));
+					if (widgetComponent)
 					{
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
 					}
 				}
 				else if (cppType == TEXT("AActor*"))
 				{
-					auto actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
-					if (IsValid(actor))
+					AActor* actor = nullptr;
+
+					if (objectProperty->GetName() == TEXT("mBuildEffectInstignator"))
+					{
+						auto actorPtr = objectProperty->ContainerPtrToValuePtr<AActor*>(obj);
+						if (actorPtr)
+						{
+							actor = *actorPtr;
+						}
+					}
+					else
+					{
+						actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
+					}
+
+					actor = GetValid(actor);
+
+					if (actor)
 					{
 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(actor));
 					}
