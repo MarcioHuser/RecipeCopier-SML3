@@ -1,18 +1,9 @@
 ﻿#include "RecipeCopierModule.h"
-#include "util/Logging.h"
-#include "Util/Optimize.h"
-
-#include "UObject/CoreNet.h"
-
-#include "FGCircuitSubsystem.h"
-#include "FGPowerCircuit.h"
-#include "FGPowerInfoComponent.h"
-#include "Buildables/FGBuildableFrackingActivator.h"
-#include "Buildables/FGBuildableGeneratorFuel.h"
-#include "Patching/NativeHookManager.h"
+#include "Util/RCLogging.h"
+#include "Util/RCOptimize.h"
 
 #ifndef OPTIMIZE
-#pragma optimize( "", off )
+#pragma optimize("", off )
 #endif
 
 // std::map<FString, float> FRecipeCopierModule::powerConsumptionMap;
@@ -24,5 +15,5 @@ void FRecipeCopierModule::StartupModule()
 IMPLEMENT_GAME_MODULE(FRecipeCopierModule, RecipeCopier);
 
 #ifndef OPTIMIZE
-#pragma optimize( "", on )
+#pragma optimize("", on )
 #endif

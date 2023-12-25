@@ -15,14 +15,14 @@
 #include "Buildables/FGBuildablePipelinePump.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Reflection/BlueprintReflectionLibrary.h"
-#include "Util/Optimize.h"
-#include "Util/Logging.h"
+#include "Util/RCOptimize.h"
+#include "Util/RCLogging.h"
 
 #include "Resources/FGItemDescriptor.h"
 #include "Util/MapHelpers.h"
 
 #ifndef OPTIMIZE
-#pragma optimize( "", off )
+#pragma optimize("", off )
 #endif
 
 ARecipeCopierLogic* ARecipeCopierLogic::singleton = nullptr;
@@ -97,221 +97,221 @@ bool ARecipeCopierLogic::IsLogLevelDisplayRC()
 	return GetLogLevelRC() > 4;
 }
 
-void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
-{
-	if (IS_RC_LOG_LEVEL(ELogVerbosity::Log))
-	{
-		RC_LOG_Display(TEXT("Object "), *obj->GetPathName());
-		RC_LOG_Display(TEXT("Class "), *obj->GetClass()->GetPathName());
-
-		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
-		{
-			RC_LOG_Display(TEXT("    - Super: "), *cls->GetPathName());
-		}
-
-		RC_LOG_Display(TEXT("Properties"));
-
-		for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
-		{
-			auto floatProperty = CastField<FFloatProperty>(*property);
-			auto doubleProperty = CastField<FDoubleProperty>(*property);
-			auto intProperty = CastField<FIntProperty>(*property);
-			auto boolProperty = CastField<FBoolProperty>(*property);
-			auto structProperty = CastField<FStructProperty>(*property);
-			auto strProperty = CastField<FStrProperty>(*property);
-			auto textProperty = CastField<FTextProperty>(*property);
-			auto classProperty = CastField<FClassProperty>(*property);
-			auto objectProperty = CastField<FObjectProperty>(*property);
-			auto weakObjectProperty = CastField<FWeakObjectProperty>(*property);
-			auto arrayProperty = CastField<FArrayProperty>(*property);
-			auto byteProperty = CastField<FByteProperty>(*property);
-			auto nameProperty = CastField<FNameProperty>(*property);
-			auto enumProperty = CastField<FEnumProperty>(*property);
-
-			FString cppType;
-
-			if (floatProperty ||
-				doubleProperty ||
-				intProperty ||
-				boolProperty ||
-				structProperty ||
-				strProperty ||
-				textProperty ||
-				classProperty ||
-				objectProperty && objectProperty->PropertyClass ||
-				weakObjectProperty && weakObjectProperty->PropertyClass ||
-				arrayProperty ||
-				byteProperty ||
-				nameProperty ||
-				enumProperty
-				)
-			{
-				cppType = property->GetCPPType();
-			}
-			else
-			{
-				cppType = TEXT("<<Unknown>>");
-			}
-
-			RC_LOG_Display(
-				TEXT("    - "),
-				*property->GetName(),
-				TEXT(" ("),
-				*cppType,
-				TEXT(" / "),
-				*property->GetClass()->GetName(),
-				TEXT(" / RepIndex = "),
-				property->RepIndex,
-				TEXT(")")
-				);
-
-			if (floatProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), floatProperty->GetPropertyValue_InContainer(obj));
-			}
-			else if (doubleProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), doubleProperty->GetPropertyValue_InContainer(obj));
-			}
-			else if (intProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), intProperty->GetPropertyValue_InContainer(obj));
-			}
-			else if (byteProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), byteProperty->GetPropertyValue_InContainer(obj));
-			}
-			else if (boolProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), boolProperty->GetPropertyValue_InContainer(obj) ? TEXT("true") : TEXT("false"));
-			}
-			else if (structProperty && cppType == TEXT("FFactoryTickFunction"))
-			{
-				auto factoryTick = structProperty->ContainerPtrToValuePtr<FFactoryTickFunction>(obj);
-				if (factoryTick)
-				{
-					RC_LOG_Display(TEXT("        - Tick Interval = "), factoryTick->TickInterval);
-				}
-			}
-			else if (strProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), *strProperty->GetPropertyValue_InContainer(obj));
-			}
-			else if (textProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), *textProperty->GetPropertyValue_InContainer(obj).ToString());
-			}
-			else if (nameProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), *nameProperty->GetPropertyValue_InContainer(obj).ToString());
-			}
-			else if (classProperty)
-			{
-				RC_LOG_Display(TEXT("        = "), *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)));
-			}
-			else if (objectProperty)
-			{
-				if (cppType == TEXT("UWidgetComponent*"))
-				{
-					auto widgetComponent = GetValid(objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj));
-					if (widgetComponent)
-					{
-						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
-					}
-				}
-				else if (cppType == TEXT("AActor*"))
-				{
-					AActor* actor = nullptr;
-
-					if (objectProperty->GetName() == TEXT("mBuildEffectInstignator"))
-					{
-						auto actorPtr = objectProperty->ContainerPtrToValuePtr<AActor*>(obj);
-						if (actorPtr)
-						{
-							actor = *actorPtr;
-						}
-					}
-					else
-					{
-						actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
-					}
-
-					actor = GetValid(actor);
-
-					if (actor)
-					{
-						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(actor));
-					}
-				}
-			}
-			else if (arrayProperty)
-			{
-				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
-
-				RC_LOG_Display(TEXT("        - CPPTypeForwardDeclaration = "), arrayProperty->GetCPPTypeForwardDeclaration());
-				RC_LOG_Display(TEXT("        - Num = "), arrayHelper.Num());
-
-				auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner);
-				auto arrayWeakObjectProperty = CastField<FWeakObjectProperty>(arrayProperty->Inner);
-
-				if (arrayObjectProperty)
-				{
-					for (auto x = 0; x < arrayHelper.Num(); x++)
-					{
-						void* ObjectContainer = arrayHelper.GetRawPtr(x);
-						auto Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
-						RC_LOG_Display(
-							TEXT("            - "),
-							x,
-							TEXT(" = "),
-							*GetPathNameSafe(Object),
-							TEXT(" ("),
-							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
-							TEXT(" )")
-							);
-					}
-				}
-				else if (arrayWeakObjectProperty)
-				{
-					for (auto x = 0; x < arrayHelper.Num(); x++)
-					{
-						void* ObjectContainer = arrayHelper.GetRawPtr(x);
-						auto Object = arrayWeakObjectProperty->GetObjectPropertyValue(ObjectContainer);
-
-						RC_LOG_Display(
-							TEXT("            - "),
-							x,
-							TEXT(" = "),
-							*GetPathNameSafe(Object),
-							TEXT(" ("),
-							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
-							TEXT(" )")
-							);
-					}
-				}
-			}
-			else if (enumProperty)
-			{
-				const auto objReflection = UBlueprintReflectionLibrary::ReflectObject(obj);
-
-				const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
-
-				auto currentValue = reflectedValue.GetCurrentValue();
-				auto enumType = enumProperty->GetEnum();
-
-				RC_LOG_Display(
-					TEXT("        = "),
-					currentValue,
-					TEXT(" ("),
-					*(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString(),
-					TEXT(")")
-					);
-			}
-		}
-
-		RC_LOG_Display(TEXT("===="));
-	}
-}
+// void ARecipeCopierLogic::DumpUnknownClass(UObject* obj)
+// {
+// 	if (IS_RC_LOG_LEVEL(ELogVerbosity::Log))
+// 	{
+// 		RC_LOG_Display(TEXT("Object "), *obj->GetPathName());
+// 		RC_LOG_Display(TEXT("Class "), *obj->GetClass()->GetPathName());
+//
+// 		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
+// 		{
+// 			RC_LOG_Display(TEXT("    - Super: "), *cls->GetPathName());
+// 		}
+//
+// 		RC_LOG_Display(TEXT("Properties"));
+//
+// 		for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
+// 		{
+// 			auto floatProperty = CastField<FFloatProperty>(*property);
+// 			auto doubleProperty = CastField<FDoubleProperty>(*property);
+// 			auto intProperty = CastField<FIntProperty>(*property);
+// 			auto boolProperty = CastField<FBoolProperty>(*property);
+// 			auto structProperty = CastField<FStructProperty>(*property);
+// 			auto strProperty = CastField<FStrProperty>(*property);
+// 			auto textProperty = CastField<FTextProperty>(*property);
+// 			auto classProperty = CastField<FClassProperty>(*property);
+// 			auto objectProperty = CastField<FObjectProperty>(*property);
+// 			auto weakObjectProperty = CastField<FWeakObjectProperty>(*property);
+// 			auto arrayProperty = CastField<FArrayProperty>(*property);
+// 			auto byteProperty = CastField<FByteProperty>(*property);
+// 			auto nameProperty = CastField<FNameProperty>(*property);
+// 			auto enumProperty = CastField<FEnumProperty>(*property);
+//
+// 			FString cppType;
+//
+// 			if (floatProperty ||
+// 				doubleProperty ||
+// 				intProperty ||
+// 				boolProperty ||
+// 				structProperty ||
+// 				strProperty ||
+// 				textProperty ||
+// 				classProperty ||
+// 				objectProperty && objectProperty->PropertyClass ||
+// 				weakObjectProperty && weakObjectProperty->PropertyClass ||
+// 				arrayProperty ||
+// 				byteProperty ||
+// 				nameProperty ||
+// 				enumProperty
+// 				)
+// 			{
+// 				cppType = property->GetCPPType();
+// 			}
+// 			else
+// 			{
+// 				cppType = TEXT("<<Unknown>>");
+// 			}
+//
+// 			RC_LOG_Display(
+// 				TEXT("    - "),
+// 				*property->GetName(),
+// 				TEXT(" ("),
+// 				*cppType,
+// 				TEXT(" / "),
+// 				*property->GetClass()->GetName(),
+// 				TEXT(" / RepIndex = "),
+// 				property->RepIndex,
+// 				TEXT(")")
+// 				);
+//
+// 			if (floatProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), floatProperty->GetPropertyValue_InContainer(obj));
+// 			}
+// 			else if (doubleProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), doubleProperty->GetPropertyValue_InContainer(obj));
+// 			}
+// 			else if (intProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), intProperty->GetPropertyValue_InContainer(obj));
+// 			}
+// 			else if (byteProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), byteProperty->GetPropertyValue_InContainer(obj));
+// 			}
+// 			else if (boolProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), boolProperty->GetPropertyValue_InContainer(obj) ? TEXT("true") : TEXT("false"));
+// 			}
+// 			else if (structProperty && cppType == TEXT("FFactoryTickFunction"))
+// 			{
+// 				auto factoryTick = structProperty->ContainerPtrToValuePtr<FFactoryTickFunction>(obj);
+// 				if (factoryTick)
+// 				{
+// 					RC_LOG_Display(TEXT("        - Tick Interval = "), factoryTick->TickInterval);
+// 				}
+// 			}
+// 			else if (strProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), *strProperty->GetPropertyValue_InContainer(obj));
+// 			}
+// 			else if (textProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), *textProperty->GetPropertyValue_InContainer(obj).ToString());
+// 			}
+// 			else if (nameProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), *nameProperty->GetPropertyValue_InContainer(obj).ToString());
+// 			}
+// 			else if (classProperty)
+// 			{
+// 				RC_LOG_Display(TEXT("        = "), *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)));
+// 			}
+// 			else if (objectProperty)
+// 			{
+// 				if (cppType == TEXT("UWidgetComponent*"))
+// 				{
+// 					auto widgetComponent = GetValid(objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj));
+// 					if (widgetComponent)
+// 					{
+// 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(widgetComponent->GetClass()));
+// 					}
+// 				}
+// 				else if (cppType == TEXT("AActor*"))
+// 				{
+// 					AActor* actor = nullptr;
+//
+// 					if (objectProperty->GetName() == TEXT("mBuildEffectInstignator"))
+// 					{
+// 						auto actorPtr = objectProperty->ContainerPtrToValuePtr<AActor*>(obj);
+// 						if (actorPtr)
+// 						{
+// 							actor = *actorPtr;
+// 						}
+// 					}
+// 					else
+// 					{
+// 						actor = objectProperty->ContainerPtrToValuePtr<AActor>(obj);
+// 					}
+//
+// 					actor = GetValid(actor);
+//
+// 					if (actor)
+// 					{
+// 						RC_LOG_Display(TEXT("            - "), *GetPathNameSafe(actor));
+// 					}
+// 				}
+// 			}
+// 			else if (arrayProperty)
+// 			{
+// 				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
+//
+// 				RC_LOG_Display(TEXT("        - CPPTypeForwardDeclaration = "), arrayProperty->GetCPPTypeForwardDeclaration());
+// 				RC_LOG_Display(TEXT("        - Num = "), arrayHelper.Num());
+//
+// 				auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner);
+// 				auto arrayWeakObjectProperty = CastField<FWeakObjectProperty>(arrayProperty->Inner);
+//
+// 				if (arrayObjectProperty)
+// 				{
+// 					for (auto x = 0; x < arrayHelper.Num(); x++)
+// 					{
+// 						void* ObjectContainer = arrayHelper.GetRawPtr(x);
+// 						auto Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
+// 						RC_LOG_Display(
+// 							TEXT("            - "),
+// 							x,
+// 							TEXT(" = "),
+// 							*GetPathNameSafe(Object),
+// 							TEXT(" ("),
+// 							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
+// 							TEXT(" )")
+// 							);
+// 					}
+// 				}
+// 				else if (arrayWeakObjectProperty)
+// 				{
+// 					for (auto x = 0; x < arrayHelper.Num(); x++)
+// 					{
+// 						void* ObjectContainer = arrayHelper.GetRawPtr(x);
+// 						auto Object = arrayWeakObjectProperty->GetObjectPropertyValue(ObjectContainer);
+//
+// 						RC_LOG_Display(
+// 							TEXT("            - "),
+// 							x,
+// 							TEXT(" = "),
+// 							*GetPathNameSafe(Object),
+// 							TEXT(" ("),
+// 							*GetPathNameSafe(Object ? Object->GetClass() : nullptr),
+// 							TEXT(" )")
+// 							);
+// 					}
+// 				}
+// 			}
+// 			else if (enumProperty)
+// 			{
+// 				const auto objReflection = UBlueprintReflectionLibrary::ReflectObject(obj);
+//
+// 				const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
+//
+// 				auto currentValue = reflectedValue.GetCurrentValue();
+// 				auto enumType = enumProperty->GetEnum();
+//
+// 				RC_LOG_Display(
+// 					TEXT("        = "),
+// 					currentValue,
+// 					TEXT(" ("),
+// 					*(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString(),
+// 					TEXT(")")
+// 					);
+// 			}
+// 		}
+//
+// 		RC_LOG_Display(TEXT("===="));
+// 	}
+// }
 
 void ARecipeCopierLogic::ApplyFactoryInfo
 (
@@ -1061,5 +1061,5 @@ void ARecipeCopierLogic::SetTimetable
 }
 
 #ifndef OPTIMIZE
-#pragma optimize( "", on)
+#pragma optimize("", on)
 #endif

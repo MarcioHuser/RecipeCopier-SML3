@@ -2,8 +2,8 @@
 #include "RecipeCopierModule.h"
 #include "RecipeCopierRCO.h"
 #include "Logic/RecipeCopierLogic.h"
-#include "Util/Optimize.h"
-#include "Util/Logging.h"
+#include "Util/RCOptimize.h"
+#include "Util/RCLogging.h"
 
 #include <map>
 
@@ -17,9 +17,10 @@
 #include "Buildables/FGBuildablePipelinePump.h"
 #include "Buildables/FGBuildableWidgetSign.h"
 #include "Components/WidgetComponent.h"
+#include "Util/MarcioCommonLibsUtils.h"
 
 #ifndef OPTIMIZE
-#pragma optimize( "", off )
+#pragma optimize("", off )
 #endif
 
 template <typename K, typename V>
@@ -567,7 +568,8 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor, bool& wasHit)
 
 		if (hitActor && playerController->WasInputKeyJustPressed(EKeys::NumPadZero))
 		{
-			ARecipeCopierLogic::DumpUnknownClass(hitActor);
+			UMarcioCommonLibsUtils::DumpUnknownClass(hitActor);
+			// ARecipeCopierLogic::DumpUnknownClass(hitActor);
 		}
 
 		// if (playerController->WasInputKeyJustPressed(toggleKey))
@@ -1065,5 +1067,5 @@ bool ARecipeCopierEquipment::CompareSplitterRules(class AFGBuildableSplitterSmar
 }
 
 #ifndef OPTIMIZE
-#pragma optimize( "", on)
+#pragma optimize("", on)
 #endif

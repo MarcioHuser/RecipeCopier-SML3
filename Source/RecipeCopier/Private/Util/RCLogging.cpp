@@ -1,4 +1,4 @@
-﻿#include "Util/Logging.h"
+﻿#include "Util/RCLogging.h"
 
 #include "Logging/LogMacros.h"
 

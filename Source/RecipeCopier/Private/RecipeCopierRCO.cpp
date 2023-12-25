@@ -1,14 +1,14 @@
 ﻿#include "RecipeCopierRCO.h"
 #include "RecipeCopierEquipment.h"
 #include "Logic/RecipeCopierLogic.h"
-#include "Util/Optimize.h"
+#include "Util/RCOptimize.h"
 
 #include "FGPlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "Util/MapHelpers.h"
 
 #ifndef OPTIMIZE
-#pragma optimize( "", off )
+#pragma optimize("", off )
 #endif
 
 void URecipeCopierRCO::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -272,5 +272,5 @@ bool URecipeCopierRCO::ApplyValve_Validate
 }
 
 #ifndef OPTIMIZE
-#pragma optimize( "", on )
+#pragma optimize("", on )
 #endif
