@@ -22,6 +22,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="RecipeCopierLogic")
+	static float GetHandToolRangeRC();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="RecipeCopierLogic")
 	static int GetLogLevelRC();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "RecipeCopierLogic")
