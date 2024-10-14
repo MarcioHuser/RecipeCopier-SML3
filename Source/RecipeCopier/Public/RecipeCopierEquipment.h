@@ -18,8 +18,11 @@ public:
 
 	virtual void BeginPlay() override;
 
-	virtual void HandleDefaultEquipmentActionEvent( EDefaultEquipmentAction action, EDefaultEquipmentActionEvent actionEvent ) override;
-	
+	virtual void HandleDefaultEquipmentActionEvent(EDefaultEquipmentAction action, EDefaultEquipmentActionEvent actionEvent) override;
+
+	virtual void Equip(AFGCharacterPlayer* character) override;
+	virtual void UnEquip() override;
+
 	UFUNCTION(BlueprintCallable, Category = "RecipeCopier")
 	virtual void HandleHitActor(AActor* hitActor, bool& wasHit);
 
@@ -55,7 +58,15 @@ public:
 	void SetWidgetSmartSplitterInfo(const TArray<struct FSplitterSortRule>& currentSplitterRules, const TArray<struct FSplitterSortRule>& savedSplitterRules);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
-	void SetWidgetFactoryInfo(TSubclassOf<class UFGRecipe> currentRecipe, TSubclassOf<class UFGRecipe> savedRecipe, float currentOverclock, float savedOverclock);
+	void SetWidgetFactoryInfo
+	(
+		TSubclassOf<class UFGRecipe> currentRecipe,
+		TSubclassOf<class UFGRecipe> savedRecipe,
+		float currentOverclock,
+		float savedOverclock,
+		float currentProductionBoost,
+		float savedProductionBoost
+	);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "RecipeCopier")
 	void SetWidgetSignInfo
@@ -76,8 +87,8 @@ public:
 		const TMap<FString, FString>& savedTexts,
 		const TMap<FString, int32>& currentIconIDs,
 		const TMap<FString, int32>& savedIconIDs,
-		const FText& currentPrefabLayoutDescription,
-		const FText& savedPrefabLayoutDescription,
+		// const FText& currentPrefabLayoutDescription,
+		// const FText& savedPrefabLayoutDescription,
 		UPARAM(DisplayName = "Sign Copy Mode", meta = (Bitmask, BitmaskEnum = ESignCopyModeType)) int32 in_signCopyMode
 	);
 
@@ -130,6 +141,9 @@ public:
 	virtual void HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel);
 	virtual void HandleAimValve(class AFGCharacterPlayer* character, class AFGBuildablePipelinePump* valve);
 
+	virtual void ShowOutline(class AFGCharacterPlayer* character, class AActor* actor);
+	virtual void HideOutline(class AFGCharacterPlayer* character);
+
 	static FString GetAuthorityAndPlayer(const AActor* actor);
 
 	FString _TAG_NAME = TEXT("RecipeCopierEquipment: ");
@@ -156,9 +170,13 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	float selectedOverclock = 0;
 	UPROPERTY(BlueprintReadWrite)
+	float selectedProductionBoost = 0;
+	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<UFGRecipe> aimedRecipe;
 	UPROPERTY(BlueprintReadWrite)
 	float aimedOverclock = 0;
+	UPROPERTY(BlueprintReadWrite)
+	float aimedProductionBoost = 0;
 	UPROPERTY(BlueprintReadWrite)
 	ERecipeCopyMode recipeCopyMode = ERecipeCopyMode::RecipeAndOverclock;
 
@@ -194,8 +212,8 @@ protected:
 	TMap<FString, FString> selectedTexts;
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> selectedIconIDs;
-	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<class UFGSignPrefabWidget> selectedPrefabLayout = nullptr;
+	// UPROPERTY(BlueprintReadWrite)
+	// TSoftClassPtr<class UFGSignPrefabWidget> selectedPrefabLayout = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<class UFGSignTypeDescriptor> selectedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite)
@@ -214,8 +232,8 @@ protected:
 	TMap<FString, FString> aimedTexts;
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> aimedIconIDs;
-	UPROPERTY(BlueprintReadWrite)
-	TSubclassOf<class UFGSignPrefabWidget> aimedPrefabLayout = nullptr;
+	// UPROPERTY(BlueprintReadWrite)
+	// TSoftClassPtr<class UFGSignPrefabWidget> aimedPrefabLayout = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<class UFGSignTypeDescriptor> aimedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = ESignCopyModeType))
@@ -238,7 +256,7 @@ protected:
 	float aimedUserFlowLimit = 0;
 	UPROPERTY(BlueprintReadWrite)
 	float selectedUserFlowLimit = 0;
-	
+
 
 	UPROPERTY(BlueprintReadWrite)
 	FKey toggleKey = EKeys::RightMouseButton;
@@ -260,6 +278,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	UPointLightComponent* pointLight = nullptr;
+
+	UPROPERTY()
+	class AActor* outlinedActor = nullptr;
 
 public:
 	// FORCEINLINE ~ARecipeCopierEquipment() = default;

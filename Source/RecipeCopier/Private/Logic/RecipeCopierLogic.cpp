@@ -4,8 +4,10 @@
 
 #include "Logic/RecipeCopierLogic.h"
 
+#include "FGCentralStorageSubsystem.h"
 #include "FGCharacterPlayer.h"
 #include "FGItemPickup_Spawnable.h"
+#include "FGPlayerController.h"
 #include "FGTrain.h"
 #include "FGTrainStationIdentifier.h"
 #include "RecipeCopierEquipment.h"
@@ -28,27 +30,9 @@
 ARecipeCopierLogic* ARecipeCopierLogic::singleton = nullptr;
 FRecipeCopier_ConfigStruct ARecipeCopierLogic::configuration;
 TSubclassOf<UFGItemDescriptor> ARecipeCopierLogic::shardItemDescriptor;
+TSubclassOf<UFGItemDescriptor> ARecipeCopierLogic::somerSloopItemDescriptor;
 TSubclassOf<AFGBuildableSplitterSmart> ARecipeCopierLogic::programmableSplitterClass;
 TSubclassOf<AFGBuildablePipelinePump> ARecipeCopierLogic::valveClass;
-
-inline FString getEnumItemName(TCHAR* name, int value)
-{
-	FString valueStr;
-
-	auto MyEnum = FindObject<UEnum>(ANY_PACKAGE, name);
-	if (MyEnum)
-	{
-		MyEnum->AddToRoot();
-
-		valueStr = MyEnum->GetDisplayNameTextByValue(value).ToString();
-	}
-	else
-	{
-		valueStr = TEXT("(Unknown)");
-	}
-
-	return FString::Printf(TEXT("%s (%d)"), *valueStr, value);
-}
 
 void ARecipeCopierLogic::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -73,11 +57,13 @@ bool ARecipeCopierLogic::IsLogLevelDisplayRC()
 void ARecipeCopierLogic::Initialize
 (
 	TSubclassOf<UFGItemDescriptor> in_shardItemDescriptor,
+	TSubclassOf<UFGItemDescriptor> in_somerSloopItemDescriptor,
 	TSubclassOf<AFGBuildableSplitterSmart> in_programmableSplitterClass,
 	TSubclassOf<AFGBuildablePipelinePump> in_valveClass
 )
 {
 	shardItemDescriptor = in_shardItemDescriptor;
+	somerSloopItemDescriptor = in_somerSloopItemDescriptor;
 	programmableSplitterClass = in_programmableSplitterClass;
 	valveClass = in_valveClass;
 	singleton = this;
@@ -98,7 +84,7 @@ void ARecipeCopierLogic::SetConfiguration(const FRecipeCopier_ConfigStruct& in_c
 	RC_LOG_Display(TEXT("StartupModule"));
 
 	configuration.handToolRange = FMath::Max(configuration.handToolRange, 2000);
-	
+
 	RC_LOG_Display(TEXT("handToolRange = "), configuration.handToolRange);
 	RC_LOG_Display(TEXT("logLevel = "), configuration.logLevel);
 
@@ -110,6 +96,7 @@ void ARecipeCopierLogic::ApplyFactoryInfo
 	class AFGBuildableFactory* factory,
 	const TSubclassOf<UFGRecipe>& recipe,
 	float overclock,
+	float productionBoost,
 	ERecipeCopyMode copyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
@@ -121,6 +108,7 @@ void ARecipeCopierLogic::ApplyFactoryInfo
 			factory,
 			recipe,
 			overclock,
+			productionBoost,
 			copyMode,
 			player,
 			copier
@@ -135,6 +123,7 @@ void ARecipeCopierLogic::ApplyFactoryInfo
 				factory,
 				recipe,
 				overclock,
+				productionBoost,
 				copyMode,
 				player,
 				copier
@@ -148,6 +137,7 @@ void ARecipeCopierLogic::ApplyFactoryInfo_Server
 	class AFGBuildableFactory* factory,
 	const TSubclassOf<UFGRecipe>& recipe,
 	float overclock,
+	float productionBoost,
 	ERecipeCopyMode copyMode,
 	AFGCharacterPlayer* player,
 	ARecipeCopierEquipment* copier
@@ -171,52 +161,126 @@ void ARecipeCopierLogic::ApplyFactoryInfo_Server
 	}
 
 	if (copyMode != ERecipeCopyMode::RecipeOnly &&
-		factory->GetCanChangePotential() &&
-		factory->GetPendingPotential() != overclock &&
-		overclock > 0)
+		((factory->GetCanChangePotential() &&
+				factory->GetPendingPotential() != overclock &&
+				overclock > 0) ||
+			(factory->CanChangeProductionBoost() &&
+				factory->GetPendingProductionBoost() != productionBoost &&
+				productionBoost > 0)))
 	{
 		auto playerInventory = player->GetInventory();
 		auto potentialIventory = factory->GetPotentialInventory();
+		auto centralStorageSubsystem = AFGCentralStorageSubsystem::Get(player->GetWorld());
 
 		RC_LOG_Display_Condition(TEXT("Applying overclock"));
 
-		// Adjust maximum/maximum overclock
-		overclock = FMath::Max(FMath::Min(overclock, factory->GetMaxPossiblePotential()), factory->GetMinPotential());
+		// Adjust minimum/maximum overclock
+		overclock = FMath::Max(FMath::Min(overclock, 1 + factory->mPotentialShardSlots * 0.5), factory->GetCurrentMinPotential());
 
 		// how many shard are necessary/extra
-		auto necessaryShards = FMath::Max(0, FMath::Min(3, FMath::CeilToInt((overclock - 1) / 0.5))) - potentialIventory->GetNumItems(shardItemDescriptor);
-		necessaryShards = FMath::Min(necessaryShards, playerInventory->GetNumItems(shardItemDescriptor));
-
-		if (necessaryShards > 0)
 		{
-			RC_LOG_Display_Condition(TEXT("Adding "), necessaryShards, TEXT(" shards to "), *GetPathNameSafe(factory));
-
-			// Add shards
-			MoveItems_Server(
-				playerInventory,
-				potentialIventory,
-				shardItemDescriptor,
+			auto necessaryShards = FMath::Max(
+				0,
+				FMath::Min(factory->mPotentialShardSlots, FMath::CeilToInt((overclock - 1) / 0.5))
+				) - (potentialIventory->GetNumItems(shardItemDescriptor));
+			necessaryShards = FMath::Min(
 				necessaryShards,
-				false,
-				nullptr
+				playerInventory->GetNumItems(shardItemDescriptor) + centralStorageSubsystem->GetNumItemsFromCentralStorage(shardItemDescriptor)
 				);
+
+			if (necessaryShards > 0)
+			{
+				RC_LOG_Display_Condition(TEXT("Adding "), necessaryShards, TEXT(" shards to "), *GetPathNameSafe(factory));
+
+				// Add shards
+				MoveItems_Server(
+					playerInventory,
+					true,
+					potentialIventory,
+					shardItemDescriptor,
+					necessaryShards,
+					false,
+					player
+					);
+			}
+			else if (necessaryShards < 0)
+			{
+				necessaryShards *= -1;
+
+				RC_LOG_Display_Condition(TEXT("Removing "), necessaryShards, TEXT(" shards from "), *GetPathNameSafe(factory));
+
+				// Remove shards
+				MoveItems_Server(
+					potentialIventory,
+					false,
+					playerInventory,
+					shardItemDescriptor,
+					necessaryShards,
+					true,
+					player
+					);
+			}
+
+			factory->SetPendingPotential(FMath::Min(overclock, factory->GetCurrentMaxPotential()));
 		}
-		else if (necessaryShards < 0)
+
+		auto controller = player->GetFGPlayerController();
+
+		if (controller && controller->IsInputKeyDown(EKeys::LeftShift))
 		{
-			RC_LOG_Display_Condition(TEXT("Removing "), -necessaryShards, TEXT(" shards from "), *GetPathNameSafe(factory));
+			RC_LOG_Display_Condition(TEXT("Applying somersloops"));
 
-			// Remove shards
-			MoveItems_Server(
-				potentialIventory,
-				playerInventory,
-				shardItemDescriptor,
-				-necessaryShards,
-				true,
-				player
+			// Adjust minimum/maximum production boost
+			productionBoost = FMath::Max(
+				FMath::Min(productionBoost, 1 + factory->mProductionShardSlotSize * factory->mProductionShardBoostMultiplier),
+				factory->GetMinProductionBoost()
 				);
-		}
 
-		factory->SetPendingPotential(FMath::Min(overclock, factory->GetCurrentMaxPotential()));
+			// how many somersloops are necessary/extra
+			auto necessarySomerSloops = FMath::Max(
+				0,
+				FMath::Min(factory->mProductionShardSlotSize, FMath::CeilToInt((productionBoost - 1) / factory->mProductionShardBoostMultiplier))
+				) - potentialIventory->GetNumItems(somerSloopItemDescriptor);
+			necessarySomerSloops = FMath::Min(
+				necessarySomerSloops,
+				playerInventory->GetNumItems(somerSloopItemDescriptor) + centralStorageSubsystem->GetNumItemsFromCentralStorage(somerSloopItemDescriptor)
+				);
+
+			if (necessarySomerSloops > 0)
+			{
+				RC_LOG_Display_Condition(TEXT("Adding "), necessarySomerSloops, TEXT(" somersloops to "), *GetPathNameSafe(factory));
+
+				// Add shards
+				MoveItems_Server(
+					playerInventory,
+					true,
+					potentialIventory,
+					somerSloopItemDescriptor,
+					necessarySomerSloops,
+					false,
+					player
+					);
+			}
+			else if (necessarySomerSloops < 0)
+			{
+				necessarySomerSloops *= -1;
+
+				RC_LOG_Display_Condition(TEXT("Removing "), necessarySomerSloops, TEXT(" somersloops from "), *GetPathNameSafe(factory));
+
+				// Remove shards
+				MoveItems_Server(
+					potentialIventory,
+					false,
+					playerInventory,
+					somerSloopItemDescriptor,
+					necessarySomerSloops,
+					true,
+					player
+					);
+			}
+
+			factory->SetPendingProductionBoost(FMath::Min(productionBoost, factory->GetCurrentMaxProductionBoost()));
+		}
 	}
 
 	copier->ClearTargets();
@@ -319,7 +383,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
-	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -337,7 +401,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 			glossiness,
 			texts,
 			iconIds,
-			prefabLayout,
+			// prefabLayout,
 			signTypeDesc,
 			signCopyMode,
 			player,
@@ -369,7 +433,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 				textValues,
 				iconIdKeys,
 				iconIdValues,
-				prefabLayout,
+				// prefabLayout,
 				signTypeDesc,
 				signCopyMode,
 				player,
@@ -389,7 +453,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
-	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -442,7 +506,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout) &&
 		signData.SignTypeDesc == signTypeDesc)
 	{
-		signData.PrefabLayout = prefabLayout;
+		// signData.PrefabLayout = prefabLayout;
 	}
 
 	widgetSign->SetPrefabSignData(signData);
@@ -648,6 +712,7 @@ bool ARecipeCopierLogic::CanProduceRecipe(AFGBuildableManufacturer* manufacturer
 void ARecipeCopierLogic::MoveItems
 (
 	UFGInventoryComponent* sourceInventoryComponent,
+	bool takeFromCentralStorage,
 	UFGInventoryComponent* targetInventoryComponent,
 	TSubclassOf<UFGItemDescriptor> item,
 	int amount,
@@ -659,6 +724,7 @@ void ARecipeCopierLogic::MoveItems
 	{
 		MoveItems_Server(
 			sourceInventoryComponent,
+			takeFromCentralStorage,
 			targetInventoryComponent,
 			item,
 			amount,
@@ -673,6 +739,7 @@ void ARecipeCopierLogic::MoveItems
 		{
 			rco->MoveItems(
 				sourceInventoryComponent,
+				takeFromCentralStorage,
 				targetInventoryComponent,
 				item,
 				amount,
@@ -686,6 +753,7 @@ void ARecipeCopierLogic::MoveItems
 void ARecipeCopierLogic::MoveItems_Server
 (
 	UFGInventoryComponent* sourceInventoryComponent,
+	bool takeFromCentralStorage,
 	UFGInventoryComponent* targetInventoryComponent,
 	TSubclassOf<UFGItemDescriptor> item,
 	int amount,
@@ -698,7 +766,9 @@ void ARecipeCopierLogic::MoveItems_Server
 		return;
 	}
 
-	amount = FMath::Min(amount, sourceInventoryComponent->GetNumItems(item));
+	auto centralStorageSubsystem = takeFromCentralStorage ? AFGCentralStorageSubsystem::Get(player->GetWorld()) : nullptr;
+
+	amount = FMath::Min(amount, sourceInventoryComponent->GetNumItems(item) + (centralStorageSubsystem ? centralStorageSubsystem->GetNumItemsFromCentralStorage(item) : 0));
 
 	auto amountAdded = targetInventoryComponent->AddStack(FInventoryStack(amount, item), true);
 
@@ -713,7 +783,22 @@ void ARecipeCopierLogic::MoveItems_Server
 			*GetPathNameSafe(targetInventoryComponent)
 			)
 
-		sourceInventoryComponent->Remove(item, amountAdded);
+		if (centralStorageSubsystem)
+		{
+			auto playerState = player->GetPlayerStateChecked<AFGPlayerState>();
+
+			UFGInventoryLibrary::GrabItemsFromInventoryAndCentralStorage(
+				sourceInventoryComponent,
+				centralStorageSubsystem,
+				playerState->GetTakeFromInventoryBeforeCentralStorage(),
+				item,
+				amountAdded
+				);
+		}
+		else
+		{
+			sourceInventoryComponent->Remove(item, amountAdded);
+		}
 
 		RC_LOG_Display_Condition(
 			TEXT("Removed "),

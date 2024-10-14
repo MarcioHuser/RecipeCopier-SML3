@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Configuration/ConfigManager.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
 #include "RecipeCopier_ConfigStruct.generated.h"
 
 /* Struct generated from Mod Configuration Asset '/RecipeCopier/Configuration/RecipeCopier_Config' */

@@ -142,6 +142,20 @@ void ARecipeCopierEquipment::HandleDefaultEquipmentActionEvent(EDefaultEquipment
 	}
 }
 
+void ARecipeCopierEquipment::Equip(AFGCharacterPlayer* character)
+{
+	Super::Equip(character);
+
+	HideOutline(character);
+}
+
+void ARecipeCopierEquipment::UnEquip()
+{
+	HideOutline(GetInstigatorCharacter());
+
+	Super::UnEquip();
+}
+
 FString ARecipeCopierEquipment::GetAuthorityAndPlayer(const AActor* actor)
 {
 	return FString(TEXT("Has Authority = ")) +
@@ -170,7 +184,7 @@ void ARecipeCopierEquipment::SetTargets
 
 void ARecipeCopierEquipment::HandleAimSmartSplitter(class AFGCharacterPlayer* character, AFGBuildableSplitterSmart* smartSplitter)
 {
-	character->GetOutline()->ShowOutline(smartSplitter, EOutlineColor::OC_USABLE);
+	ShowOutline(character, smartSplitter);
 
 	if (targetSmartSplitter != smartSplitter)
 	{
@@ -217,7 +231,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 
 	if (manufacturer || factory->GetCanChangePotential())
 	{
-		character->GetOutline()->ShowOutline(factory, EOutlineColor::OC_USABLE);
+		ShowOutline(character, factory);
 
 		if (targetFactory != factory)
 		{
@@ -234,13 +248,16 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 
 			aimedRecipe = manufacturer ? manufacturer->GetCurrentRecipe() : nullptr;
 			aimedOverclock = factory->GetPendingPotential();
+			aimedProductionBoost = factory->GetPendingProductionBoost();
 
 			// Check noop
-			if (selectedRecipe == nullptr && selectedOverclock <= 0 || // No recipe and no overclocking
-				(recipeCopyMode == ERecipeCopyMode::RecipeOnly || !factory->GetCanChangePotential() || aimedOverclock == selectedOverclock) &&
-				(recipeCopyMode == ERecipeCopyMode::OverclockOnly || !manufacturer || aimedRecipe == selectedRecipe)
-				// Same overclock (or ignored) and same recipe (or ignored; or not a manufacturer)
-				)
+			if ((selectedRecipe == nullptr && selectedOverclock <= 0 && selectedProductionBoost <= 1) || // No recipe and no overclocking
+				((recipeCopyMode == ERecipeCopyMode::RecipeOnly ||
+						((!factory->GetCanChangePotential() || aimedOverclock == selectedOverclock) &&
+							(!factory->CanChangeProductionBoost() || aimedProductionBoost == selectedProductionBoost))) &&
+					(recipeCopyMode == ERecipeCopyMode::OverclockOnly || !manufacturer || aimedRecipe == selectedRecipe)
+					// Same overclock (or ignored) and same recipe (or ignored; or not a manufacturer)
+				))
 			{
 				if (pointLight)
 				{
@@ -248,8 +265,10 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 				}
 			}
 			// Check can define recipe
-			else if (recipeCopyMode != ERecipeCopyMode::OverclockOnly && ARecipeCopierLogic::CanProduceRecipe(manufacturer, selectedRecipe) && aimedRecipe != selectedRecipe ||
-				recipeCopyMode != ERecipeCopyMode::RecipeOnly && factory->GetMaxPossiblePotential() > 0 && aimedOverclock != selectedOverclock)
+			else if ((recipeCopyMode != ERecipeCopyMode::OverclockOnly && ARecipeCopierLogic::CanProduceRecipe(manufacturer, selectedRecipe) && aimedRecipe != selectedRecipe) ||
+				(recipeCopyMode != ERecipeCopyMode::RecipeOnly &&
+					((factory->GetCurrentMaxPotential() > 0 && aimedOverclock != selectedOverclock) ||
+						(factory->GetCurrentProductionBoost() > 1 && aimedProductionBoost != selectedProductionBoost))))
 			{
 				if (pointLight)
 				{
@@ -270,7 +289,9 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 				aimedRecipe,
 				selectedRecipe,
 				aimedOverclock,
-				selectedOverclock
+				selectedOverclock,
+				aimedProductionBoost,
+				selectedProductionBoost
 				);
 
 			SetTextureWidget(currentWidgetInfo = widgetFactoryInfo);
@@ -278,7 +299,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 	}
 	else if (pointLight)
 	{
-		character->GetOutline()->HideOutline();
+		HideOutline(character);
 
 		// Not a valid factory
 		pointLight->SetIntensity(0);
@@ -287,7 +308,7 @@ void ARecipeCopierEquipment::HandleAimFactory(AFGPlayerController* playerControl
 
 void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, AFGBuildableWidgetSign* widgetSign)
 {
-	character->GetOutline()->ShowOutline(widgetSign, EOutlineColor::OC_USABLE);
+	ShowOutline(character, widgetSign);
 
 	if (widgetSign != targetWidgetSign)
 	{
@@ -308,7 +329,7 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 
 		widgetSign->GetSignPrefabData(signData);
 
-		aimedPrefabLayout = signData.PrefabLayout;
+		// aimedPrefabLayout = signData.PrefabLayout;
 		aimedSignTypeDesc = signData.SignTypeDesc;
 
 		aimedForegroundColor = signData.ForegroundColor;
@@ -399,8 +420,8 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
-			FText::FromString(GetNameSafe(aimedPrefabLayout)),
-			FText::FromString(GetNameSafe(selectedPrefabLayout)),
+			// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+			// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 			signCopyMode
 			);
 
@@ -410,7 +431,7 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 
 void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character, class AFGTrain* train)
 {
-	character->GetOutline()->ShowOutline(train->GetMultipleUnitMaster(), EOutlineColor::OC_USABLE);
+	ShowOutline(character, train->GetMultipleUnitMaster());
 
 	if (train != targetTrain)
 	{
@@ -466,7 +487,7 @@ void ARecipeCopierEquipment::HandleAimTrain(class AFGCharacterPlayer* character,
 
 void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlayer* character, class AFGBuildableLightsControlPanel* lightsControlPanel)
 {
-	character->GetOutline()->ShowOutline(lightsControlPanel, EOutlineColor::OC_USABLE);
+	ShowOutline(character, lightsControlPanel);
 
 	if (lightsControlPanel != targetLightsControlPanel)
 	{
@@ -516,7 +537,7 @@ void ARecipeCopierEquipment::HandleAimLightsControlPanel(class AFGCharacterPlaye
 
 void ARecipeCopierEquipment::HandleAimValve(class AFGCharacterPlayer* character, class AFGBuildablePipelinePump* valve)
 {
-	character->GetOutline()->ShowOutline(valve, EOutlineColor::OC_USABLE);
+	ShowOutline(character, valve);
 
 	if (valve != targetValve)
 	{
@@ -617,7 +638,7 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor, bool& wasHit)
 
 		if (clearTarget)
 		{
-			character->GetOutline()->HideOutline();
+			HideOutline(character);
 
 			if (pointLight)
 			{
@@ -691,12 +712,15 @@ void ARecipeCopierEquipment::CopyFactory()
 
 	selectedRecipe = aimedRecipe;
 	selectedOverclock = aimedOverclock;
+	selectedProductionBoost = aimedProductionBoost;
 
 	SetWidgetFactoryInfo(
 		aimedRecipe,
 		selectedRecipe,
 		aimedOverclock,
-		selectedOverclock
+		selectedOverclock,
+		aimedProductionBoost,
+		selectedProductionBoost
 		);
 }
 
@@ -724,7 +748,7 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 	selectedGlossiness = aimedGlossiness;
 	selectedTexts = aimedTexts;
 	selectedIconIDs = aimedIconIDs;
-	selectedPrefabLayout = aimedPrefabLayout;
+	// selectedPrefabLayout = aimedPrefabLayout;
 	selectedSignTypeDesc = aimedSignTypeDesc;
 
 	SetWidgetSignInfo(
@@ -744,8 +768,8 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 		selectedTexts,
 		aimedIconIDs,
 		selectedIconIDs,
-		FText::FromString(GetNameSafe(aimedPrefabLayout)),
-		FText::FromString(GetNameSafe(selectedPrefabLayout)),
+		// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+		// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 		signCopyMode
 		);
 }
@@ -804,13 +828,17 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		aimedRecipe = nullptr,
 		selectedRecipe,
 		aimedOverclock = 0,
-		selectedOverclock
+		selectedOverclock,
+		aimedProductionBoost = 0,
+		selectedProductionBoost
 		);
 
 	SetWidgetSmartSplitterInfo(
 		aimedSplitterRules = TArray<FSplitterSortRule>(),
 		selectedSplitterRules
 		);
+
+	// aimedPrefabLayout=nullptr;
 
 	SetWidgetSignInfo(
 		aimedIsDefined = false,
@@ -829,8 +857,8 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedTexts,
 		aimedIconIDs = TMap<FString, int32>(),
 		selectedIconIDs,
-		FText::FromString(GetNameSafe(aimedPrefabLayout = nullptr)),
-		FText::FromString(GetNameSafe(selectedPrefabLayout)),
+		// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+		// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 		signCopyMode
 		);
 
@@ -876,6 +904,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 			targetFactory,
 			selectedRecipe,
 			selectedOverclock,
+			selectedProductionBoost,
 			recipeCopyMode,
 			GetInstigatorCharacter(),
 			this
@@ -901,7 +930,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 			selectedGlossiness,
 			selectedTexts,
 			selectedIconIDs,
-			selectedPrefabLayout,
+			// selectedPrefabLayout,
 			selectedSignTypeDesc,
 			signCopyMode,
 			GetInstigatorCharacter(),
@@ -977,7 +1006,9 @@ void ARecipeCopierEquipment::CycleCopyMode()
 			aimedRecipe,
 			selectedRecipe,
 			aimedOverclock,
-			selectedOverclock
+			selectedOverclock,
+			aimedProductionBoost,
+			selectedProductionBoost
 			);
 
 		PlayObjectScannerCycleRightAnim();
@@ -1038,8 +1069,8 @@ void ARecipeCopierEquipment::CycleCopyMode()
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
-			FText::FromString(GetNameSafe(aimedPrefabLayout)),
-			FText::FromString(GetNameSafe(selectedPrefabLayout)),
+			// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+			// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 			signCopyMode
 			);
 
@@ -1065,6 +1096,27 @@ bool ARecipeCopierEquipment::CompareSplitterRules(class AFGBuildableSplitterSmar
 
 	return true;
 }
+
+void ARecipeCopierEquipment::ShowOutline(AFGCharacterPlayer* character, AActor* actor)
+{
+	HideOutline(character);
+
+	if (character && actor)
+	{
+		character->GetOutline()->ShowOutline(actor, EOutlineColor::OC_USABLE);
+		outlinedActor = actor;
+	}
+}
+
+void ARecipeCopierEquipment::HideOutline(AFGCharacterPlayer* character)
+{
+	if (character && outlinedActor)
+	{
+		character->GetOutline()->HideOutline(outlinedActor);
+		outlinedActor = nullptr;
+	}
+}
+
 
 #ifndef OPTIMIZE
 #pragma optimize("", on)

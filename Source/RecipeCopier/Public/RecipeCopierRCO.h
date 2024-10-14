@@ -31,6 +31,7 @@ public:
 		class AFGBuildableFactory* factory,
 		TSubclassOf<UFGRecipe> recipe,
 		float overclock,
+		float productionBoost,
 		ERecipeCopyMode copyMode,
 		class AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
@@ -40,6 +41,7 @@ public:
 	virtual void MoveItems
 	(
 		class UFGInventoryComponent* sourceInventoryComponent,
+		bool takeFromCentralStorage,
 		class UFGInventoryComponent* targetInventoryComponent,
 		TSubclassOf<UFGItemDescriptor> item,
 		int amount,
@@ -69,7 +71,7 @@ public:
 		const TArray<FString>& textValues,
 		const TArray<FString>& iconIdKeys,
 		const TArray<int32>& iconIdValues,
-		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,

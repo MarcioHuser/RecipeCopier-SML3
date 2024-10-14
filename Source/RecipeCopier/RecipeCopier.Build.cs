@@ -48,7 +48,14 @@ public class RecipeCopier : ModuleRules
 			}
 		);
 			
-		PublicDependencyModuleNames.AddRange(new string[] {"FactoryGame", "SML", "MarcioCommonLibs"});
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"FactoryGame",
+			"SML",
+			"MarcioCommonLibs",
+			"AbstractInstance",
+			"DummyHeaders",
+		});
 			
 		
 		PrivateDependencyModuleNames.AddRange(
@@ -67,7 +74,7 @@ public class RecipeCopier : ModuleRules
 			}
 		);
 			
-		var factoryGamePchPath = new DirectoryReference(Path.Combine(Target.ProjectFile.Directory.ToString(), "Source", "FactoryGame", "Public", "FactoryGame.h"));
-		PrivatePCHHeaderFile = factoryGamePchPath.MakeRelativeTo(new DirectoryReference(ModuleDirectory));
+		// var factoryGamePchPath = new DirectoryReference(Path.Combine(Target.ProjectFile.Directory.ToString(), "Source", "FactoryGame", "Public"));
+		// PrivatePCHHeaderFile = factoryGamePchPath.MakeRelativeTo(new DirectoryReference(ModuleDirectory));
 	}
 }

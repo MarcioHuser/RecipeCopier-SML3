@@ -34,6 +34,7 @@ public:
 	virtual void Initialize
 	(
 		UPARAM(DisplayName = "Shard Item Descriptor") TSubclassOf<class UFGItemDescriptor> in_shardItemDescriptor,
+		UPARAM(DisplayName = "SomerSloop Item Descriptor") TSubclassOf<class UFGItemDescriptor> in_somerSloopItemDescriptor,
 		UPARAM(DisplayName = "Programmable Splitter Class") TSubclassOf<class AFGBuildableSplitterSmart> in_programmableSplitterClass,
 		UPARAM(DisplayName = "Valve Class") TSubclassOf<class AFGBuildablePipelinePump> in_valveClass
 	);
@@ -53,6 +54,7 @@ public:
 		class AFGBuildableFactory* factory,
 		const TSubclassOf<UFGRecipe>& recipe,
 		float overclock,
+		float productionBoost,
 		ERecipeCopyMode copyMode,
 		class AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
@@ -62,6 +64,7 @@ public:
 		class AFGBuildableFactory* factory,
 		const TSubclassOf<UFGRecipe>& recipe,
 		float overclock,
+		float productionBoost,
 		ERecipeCopyMode copyMode,
 		class AFGCharacterPlayer* player,
 		class ARecipeCopierEquipment* copier
@@ -94,7 +97,7 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
-		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,
@@ -110,7 +113,7 @@ public:
 		float glossiness,
 		const TMap<FString, FString>& texts,
 		const TMap<FString, int32>& iconIDs,
-		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+		// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,
@@ -174,6 +177,7 @@ public:
 	static void MoveItems
 	(
 		class UFGInventoryComponent* sourceInventoryComponent,
+		bool takeFromCentralStorage,
 		class UFGInventoryComponent* targetInventoryComponent,
 		TSubclassOf<UFGItemDescriptor> item,
 		int amount,
@@ -183,6 +187,7 @@ public:
 	static void MoveItems_Server
 	(
 		class UFGInventoryComponent* sourceInventoryComponent,
+		bool takeFromCentralStorage,
 		class UFGInventoryComponent* targetInventoryComponent,
 		TSubclassOf<UFGItemDescriptor> item,
 		int amount,
@@ -207,6 +212,7 @@ public:
 	static ARecipeCopierLogic* singleton;
 	static FRecipeCopier_ConfigStruct configuration;
 	static TSubclassOf<UFGItemDescriptor> shardItemDescriptor;
+	static TSubclassOf<UFGItemDescriptor> somerSloopItemDescriptor;
 	static TSubclassOf<AFGBuildableSplitterSmart> programmableSplitterClass;
 	static TSubclassOf<AFGBuildablePipelinePump> valveClass;
 };

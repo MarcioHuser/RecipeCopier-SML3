@@ -30,6 +30,7 @@ void URecipeCopierRCO::ApplyFactoryInfo_Implementation
 	class AFGBuildableFactory* factory,
 	TSubclassOf<UFGRecipe> recipe,
 	float overclock,
+	float productionBoost,
 	ERecipeCopyMode copyMode,
 	class AFGCharacterPlayer* player,
 	class ARecipeCopierEquipment* copier
@@ -44,6 +45,7 @@ void URecipeCopierRCO::ApplyFactoryInfo_Implementation
 		factory,
 		recipe,
 		overclock,
+		productionBoost,
 		copyMode,
 		player,
 		copier
@@ -55,6 +57,7 @@ bool URecipeCopierRCO::ApplyFactoryInfo_Validate
 	class AFGBuildableFactory* factory,
 	TSubclassOf<UFGRecipe> recipe,
 	float selectedOverclock,
+	float selectedProductionBoost,
 	ERecipeCopyMode copyMode,
 	class AFGCharacterPlayer* player,
 	class ARecipeCopierEquipment* copier
@@ -66,6 +69,7 @@ bool URecipeCopierRCO::ApplyFactoryInfo_Validate
 void URecipeCopierRCO::MoveItems_Implementation
 (
 	UFGInventoryComponent* sourceInventoryComponent,
+	bool takeFromCentralStorage,
 	UFGInventoryComponent* targetInventoryComponent,
 	TSubclassOf<UFGItemDescriptor> item,
 	int amount,
@@ -75,6 +79,7 @@ void URecipeCopierRCO::MoveItems_Implementation
 {
 	ARecipeCopierLogic::MoveItems_Server(
 		sourceInventoryComponent,
+		takeFromCentralStorage,
 		targetInventoryComponent,
 		item,
 		amount,
@@ -86,6 +91,7 @@ void URecipeCopierRCO::MoveItems_Implementation
 bool URecipeCopierRCO::MoveItems_Validate
 (
 	UFGInventoryComponent* sourceInventoryComponent,
+	bool takeFromCentralStorage,
 	UFGInventoryComponent* targetInventoryComponent,
 	TSubclassOf<UFGItemDescriptor> item,
 	int amount,
@@ -162,7 +168,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	const TArray<FString>& textValues,
 	const TArray<FString>& iconIdKeys,
 	const TArray<int32>& iconIdValues,
-	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -184,7 +190,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 		glossiness,
 		texts,
 		iconIds,
-		prefabLayout,
+		// prefabLayout,
 		signTypeDesc,
 		signCopyMode,
 		player,
@@ -204,7 +210,7 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	const TArray<FString>& textValues,
 	const TArray<FString>& iconIdKeys,
 	const TArray<int32>& iconIdValues,
-	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
+	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,

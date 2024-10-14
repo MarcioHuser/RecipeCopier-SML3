@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Modules/ModuleManager.h"
+
 #include <map>
 
 #include "RecipeCopier_ConfigStruct.h"
