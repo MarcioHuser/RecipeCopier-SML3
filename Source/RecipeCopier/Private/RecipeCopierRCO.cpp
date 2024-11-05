@@ -4,6 +4,7 @@
 #include "Util/RCOptimize.h"
 
 #include "FGPlayerController.h"
+#include "FGSignTypes.h"
 #include "Net/UnrealNetwork.h"
 #include "Util/MapHelpers.h"
 
@@ -168,7 +169,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 	const TArray<FString>& textValues,
 	const TArray<FString>& iconIdKeys,
 	const TArray<int32>& iconIdValues,
-	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -190,7 +191,7 @@ void URecipeCopierRCO::ApplyWidgetSignInfo_Implementation
 		glossiness,
 		texts,
 		iconIds,
-		// prefabLayout,
+		*prefabLayout,
 		signTypeDesc,
 		signCopyMode,
 		player,
@@ -210,7 +211,7 @@ bool URecipeCopierRCO::ApplyWidgetSignInfo_Validate
 	const TArray<FString>& textValues,
 	const TArray<FString>& iconIdKeys,
 	const TArray<int32>& iconIdValues,
-	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,

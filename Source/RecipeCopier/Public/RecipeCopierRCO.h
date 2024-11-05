@@ -71,7 +71,7 @@ public:
 		const TArray<FString>& textValues,
 		const TArray<FString>& iconIdKeys,
 		const TArray<int32>& iconIdValues,
-		// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
+		TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 		TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 		int32 signCopyMode,
 		AFGCharacterPlayer* player,

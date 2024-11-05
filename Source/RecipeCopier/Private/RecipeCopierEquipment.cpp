@@ -329,8 +329,8 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 
 		widgetSign->GetSignPrefabData(signData);
 
-		// aimedPrefabLayout = signData.PrefabLayout;
-		aimedSignTypeDesc = signData.SignTypeDesc;
+		aimedPrefabLayout = signData.PrefabLayout.Get();
+		aimedSignTypeDesc = signData.SignTypeDesc.Get();
 
 		aimedForegroundColor = signData.ForegroundColor;
 		aimedBackgroundColor = signData.BackgroundColor;
@@ -338,10 +338,10 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 		aimedEmissive = signData.Emissive;
 		aimedGlossiness = signData.Glossiness;
 
-		// RC_LOG_Display_Condition(TEXT("    Prefab Layout: "), *GetPathNameSafe(aimedPrefabLayout ));
-		// RC_LOG_Display_Condition(TEXT("    Prefab Layout Class: "), *GetPathNameSafe(aimedPrefabLayout ? aimedPrefabLayout->GetClass() : nullptr));
-		// RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor: "), *GetPathNameSafe(aimedSignTypeDesc));
-		// RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor Class: "), *GetPathNameSafe(aimedSignTypeDesc ? aimedSignTypeDesc->GetClass() : nullptr));
+		RC_LOG_Display_Condition(TEXT("    Prefab Layout: "), *GetPathNameSafe(aimedPrefabLayout.Get()));
+		RC_LOG_Display_Condition(TEXT("    Prefab Layout Class: "), *GetPathNameSafe(aimedPrefabLayout ? aimedPrefabLayout->GetClass() : nullptr));
+		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor: "), *GetPathNameSafe(aimedSignTypeDesc));
+		RC_LOG_Display_Condition(TEXT("    Sign Type Descriptor Class: "), *GetPathNameSafe(aimedSignTypeDesc ? aimedSignTypeDesc->GetClass() : nullptr));
 
 		aimedTexts = signData.TextElementData;
 		aimedIconIDs = signData.IconElementData;
@@ -420,8 +420,8 @@ void ARecipeCopierEquipment::HandleAimSign(class AFGCharacterPlayer* character, 
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
-			// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
-			// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
+			FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+			FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 			signCopyMode
 			);
 
@@ -748,7 +748,7 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 	selectedGlossiness = aimedGlossiness;
 	selectedTexts = aimedTexts;
 	selectedIconIDs = aimedIconIDs;
-	// selectedPrefabLayout = aimedPrefabLayout;
+	selectedPrefabLayout = aimedPrefabLayout;
 	selectedSignTypeDesc = aimedSignTypeDesc;
 
 	SetWidgetSignInfo(
@@ -768,8 +768,8 @@ void ARecipeCopierEquipment::CopyWidgetSign()
 		selectedTexts,
 		aimedIconIDs,
 		selectedIconIDs,
-		// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
-		// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
+		FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+		FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 		signCopyMode
 		);
 }
@@ -838,7 +838,7 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedSplitterRules
 		);
 
-	// aimedPrefabLayout=nullptr;
+	aimedPrefabLayout = nullptr;
 
 	SetWidgetSignInfo(
 		aimedIsDefined = false,
@@ -857,8 +857,8 @@ void ARecipeCopierEquipment::ClearTargets_Implementation()
 		selectedTexts,
 		aimedIconIDs = TMap<FString, int32>(),
 		selectedIconIDs,
-		// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
-		// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
+		FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+		FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 		signCopyMode
 		);
 
@@ -930,7 +930,7 @@ void ARecipeCopierEquipment::ApplyTarget()
 			selectedGlossiness,
 			selectedTexts,
 			selectedIconIDs,
-			// selectedPrefabLayout,
+			selectedPrefabLayout,
 			selectedSignTypeDesc,
 			signCopyMode,
 			GetInstigatorCharacter(),
@@ -1069,8 +1069,8 @@ void ARecipeCopierEquipment::CycleCopyMode()
 			selectedTexts,
 			aimedIconIDs,
 			selectedIconIDs,
-			// FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
-			// FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
+			FText::FromString(GetNameSafe(aimedPrefabLayout.Get())),
+			FText::FromString(GetNameSafe(selectedPrefabLayout.Get())),
 			signCopyMode
 			);
 

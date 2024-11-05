@@ -383,7 +383,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
-	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -401,7 +401,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 			glossiness,
 			texts,
 			iconIds,
-			// prefabLayout,
+			prefabLayout,
 			signTypeDesc,
 			signCopyMode,
 			player,
@@ -433,7 +433,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo
 				textValues,
 				iconIdKeys,
 				iconIdValues,
-				// prefabLayout,
+				prefabLayout.Get(),
 				signTypeDesc,
 				signCopyMode,
 				player,
@@ -453,7 +453,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	float glossiness,
 	const TMap<FString, FString>& texts,
 	const TMap<FString, int32>& iconIds,
-	// TSoftClassPtr<class UFGSignPrefabWidget> prefabLayout,
+	TSubclassOf<class UFGSignPrefabWidget> prefabLayout,
 	TSubclassOf<class UFGSignTypeDescriptor> signTypeDesc,
 	int32 signCopyMode,
 	AFGCharacterPlayer* player,
@@ -506,7 +506,7 @@ void ARecipeCopierLogic::ApplyWidgetSignInfo_Server
 	if (Has_ESignCopyModeType(signCopyMode, ESignCopyModeType::SCMT_Layout) &&
 		signData.SignTypeDesc == signTypeDesc)
 	{
-		// signData.PrefabLayout = prefabLayout;
+		signData.PrefabLayout = prefabLayout;
 	}
 
 	widgetSign->SetPrefabSignData(signData);

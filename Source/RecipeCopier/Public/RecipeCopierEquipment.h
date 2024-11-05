@@ -87,8 +87,8 @@ public:
 		const TMap<FString, FString>& savedTexts,
 		const TMap<FString, int32>& currentIconIDs,
 		const TMap<FString, int32>& savedIconIDs,
-		// const FText& currentPrefabLayoutDescription,
-		// const FText& savedPrefabLayoutDescription,
+		 const FText& currentPrefabLayoutDescription,
+		 const FText& savedPrefabLayoutDescription,
 		UPARAM(DisplayName = "Sign Copy Mode", meta = (Bitmask, BitmaskEnum = ESignCopyModeType)) int32 in_signCopyMode
 	);
 
@@ -212,8 +212,8 @@ protected:
 	TMap<FString, FString> selectedTexts;
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> selectedIconIDs;
-	// UPROPERTY(BlueprintReadWrite)
-	// TSoftClassPtr<class UFGSignPrefabWidget> selectedPrefabLayout = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	TSubclassOf<class UFGSignPrefabWidget> selectedPrefabLayout = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<class UFGSignTypeDescriptor> selectedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite)
@@ -232,8 +232,8 @@ protected:
 	TMap<FString, FString> aimedTexts;
 	UPROPERTY(BlueprintReadWrite)
 	TMap<FString, int32> aimedIconIDs;
-	// UPROPERTY(BlueprintReadWrite)
-	// TSoftClassPtr<class UFGSignPrefabWidget> aimedPrefabLayout = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	TSubclassOf<class UFGSignPrefabWidget> aimedPrefabLayout = nullptr;
 	UPROPERTY(BlueprintReadWrite)
 	TSubclassOf<class UFGSignTypeDescriptor> aimedSignTypeDesc = nullptr;
 	UPROPERTY(BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = ESignCopyModeType))
