@@ -590,13 +590,7 @@ void ARecipeCopierEquipment::HandleHitActor(AActor* hitActor, bool& wasHit)
 		if (hitActor && playerController->WasInputKeyJustPressed(EKeys::NumPadZero))
 		{
 			UMarcioCommonLibsUtils::DumpUnknownClass(hitActor);
-			// ARecipeCopierLogic::DumpUnknownClass(hitActor);
 		}
-
-		// if (playerController->WasInputKeyJustPressed(toggleKey))
-		// {
-		// 	CycleCopyMode();
-		// }
 
 		if (auto smartSplitter = Cast<AFGBuildableSplitterSmart>(hitActor))
 		{
