@@ -3,7 +3,7 @@
   "Version": 2,
   "VersionName": "2.6.8",
   "SemVersion": "2.6.8",
-  "GameVersion": ">=382498",
+  "GameVersion": ">=385279",
   "FriendlyName": "Settings Copier",
   "Description": "Copy various settings from a building into another by pointing and clicking!",
   "Category": "Modding",
@@ -31,7 +31,7 @@
     },
     {
       "Name": "SML",
-      "SemVersion": "^3.8.0",
+      "SemVersion": "^3.9.0",
       "Enabled": true
     },
     {
