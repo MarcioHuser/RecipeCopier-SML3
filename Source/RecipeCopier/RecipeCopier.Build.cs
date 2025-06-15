@@ -8,6 +8,8 @@ public class RecipeCopier : ModuleRules
 {
 	public RecipeCopier(ReadOnlyTargetRules Target) : base(Target)
 	{
+		CppStandard = CppStandardVersion.Cpp20;
+		
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		bLegacyPublicIncludePaths = false;
 		
