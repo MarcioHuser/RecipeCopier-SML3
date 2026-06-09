@@ -2,7 +2,7 @@
 #include "RecipeCopierEquipment.h"
 #include "Logic/RecipeCopierLogic.h"
 #include "Util/RCOptimize.h"
-
+#include "Buildables/FGBuildableFactory.h"
 #include "FGPlayerController.h"
 #include "FGSignTypes.h"
 #include "Net/UnrealNetwork.h"
