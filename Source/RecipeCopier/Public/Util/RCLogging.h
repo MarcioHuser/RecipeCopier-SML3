@@ -54,12 +54,22 @@ public:
 
 DECLARE_LOG_CATEGORY_EXTERN(LogRecipeCopier, Log, All)
 
+#if PLATFORM_LINUX
+#define RC_LOG_Verbosity(verbosity, first, ...) \
+	{ \
+		CommaLog l; \
+		l, first, ##__VA_ARGS__; \
+		const auto AnsiStr = StringCast<ANSICHAR>(l.wos.str().c_str()); \
+		UE_LOG(LogRecipeCopier, verbosity, TEXT("%hs"), AnsiStr.Get()) \
+	}
+#else
 #define RC_LOG_Verbosity(verbosity, first, ...) \
 	{ \
 		CommaLog l; \
 		l, first, ##__VA_ARGS__; \
 		UE_LOG(LogRecipeCopier, verbosity, TEXT("%s"), l.wos.str().c_str()) \
 	}
+#endif
 
 #define RC_LOG_Log(first, ...) RC_LOG_Verbosity(Log, first, ##__VA_ARGS__)
 #define RC_LOG_Display(first, ...) RC_LOG_Verbosity(Display, first, ##__VA_ARGS__)
